@@ -3,1033 +3,450 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>D2C performance dashboard, 2024</title>
+<title>Channel and product performance, 2024 | D2C dashboard</title>
 <style>
   :root{
-    color-scheme:dark;
-    --bg:#0A0D10; --panel:#131920; --ink:#E6EDF0; --muted:#9AA7AF; --faint:#66737B; --line:#26303A; --line2:#1D252C;
-    --net:#2F86AD; --net-hi:#66BBE0; --disc:#E0527F; --grid:#222B32; --empty:#0F1418; --good:#4CC38A;
+    --bg:#EDF1F0; --panel:#FFFFFF; --ink:#1C2A33; --muted:#5A6A73; --line:#D5DDDB;
+    --net:#1F5E7A; --net-soft:#E3EEF2; --disc:#C23B63; --disc-soft:#F7E4EA;
+    --skincare:#5B83C9; --haircare:#C4861F; --makeup:#9557AE; --wellness:#3A8E62;
   }
   *{box-sizing:border-box}
-  html{scroll-behavior:smooth}
-  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
   body{margin:0;background:var(--bg);color:var(--ink);
     font-family:"Avenir Next","Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,Roboto,"Helvetica Neue",Arial,sans-serif;
     font-size:15px;line-height:1.5;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
-  button{font:inherit;color:inherit}
-  button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--net);outline-offset:2px}
-
-  /* Sticky top bar */
-  .topbar{position:sticky;top:0;z-index:30;background:rgba(10,13,16,.9);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border-bottom:1px solid var(--line)}
-  .topbar-in{max-width:1280px;margin:0 auto;padding:9px 24px;display:flex;gap:6px 18px;align-items:center;flex-wrap:wrap}
-  .mark{font-weight:700;font-size:15px;white-space:nowrap;margin-right:6px}
-  nav{display:flex;gap:2px;flex-wrap:wrap}
-  nav a{color:var(--muted);text-decoration:none;font-size:14px;padding:4px 9px;border-radius:6px}
-  nav a:hover{color:var(--ink);background:var(--panel)}
-  .active-f{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:13px;color:var(--muted)}
-  .pill{display:inline-flex;align-items:center;gap:6px;background:var(--ink);color:var(--bg);border-radius:999px;padding:3px 4px 3px 11px;font-size:12.5px}
-  .pill button{border:none;background:rgba(0,0,0,.14);color:var(--bg);width:19px;height:19px;border-radius:50%;cursor:pointer;line-height:19px;padding:0;font-size:12px}
-
-  .wrap{max-width:1280px;margin:0 auto;padding:24px 24px 56px}
-  h1{font-size:27px;line-height:1.2;font-weight:650;letter-spacing:-0.01em;margin:0}
-  .sub{color:var(--muted);margin:5px 0 0;max-width:72ch}
+  .wrap{max-width:1240px;margin:0 auto;padding:28px 24px 56px}
+  h1{font-size:26px;line-height:1.2;font-weight:600;letter-spacing:-0.01em;margin:0}
+  h2{font-size:16px;font-weight:600;margin:0 0 2px}
+  .note{color:var(--muted);font-size:13px;margin:0 0 14px}
+  .sub{color:var(--muted);margin:4px 0 0}
 
   /* Filters */
-  .filters{margin-top:18px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 18px;
-    display:grid;grid-template-columns:auto 1fr;gap:9px 16px;align-items:center}
-  .filters .lbl{color:var(--muted);font-size:13px}
-  .chips{display:flex;flex-wrap:wrap;gap:6px}
-  .chip{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:4px 12px;font-size:13px;cursor:pointer}
-  .chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+  .filters{display:flex;flex-wrap:wrap;gap:12px 28px;margin:20px 0 22px;align-items:center}
+  .fgroup{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .fgroup .lbl{color:var(--muted);font-size:13px;margin-right:4px}
+  .chip{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:5px 12px;
+    font:inherit;font-size:13px;cursor:pointer;color:var(--ink)}
+  .chip[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
   .chip .sw{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:1px}
-  .filters .foot{grid-column:1/-1;display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px;border-top:1px solid var(--line2);padding-top:9px;font-size:13px;color:var(--muted)}
-  .linkbtn{background:none;border:none;padding:2px;color:var(--net-hi);text-decoration:underline;cursor:pointer;font-size:13px}
+  .linkbtn{background:none;border:none;padding:4px 2px;color:var(--net);text-decoration:underline;cursor:pointer;font:inherit;font-size:13px}
+  button:focus-visible,th button:focus-visible{outline:2px solid var(--net);outline-offset:2px}
 
-  /* Sections and panels */
-  section.block{margin-top:40px;scroll-margin-top:62px}
-  #overview{margin-top:0}
-  .block > h2{font-size:22px;font-weight:650;margin:0;letter-spacing:-0.005em}
-  .block > .lead{color:var(--muted);margin:3px 0 0;max-width:75ch}
-  .panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:18px 20px}
-  .panel h3{font-size:15.5px;font-weight:600;margin:0 0 2px}
-  .note{color:var(--muted);font-size:13px;margin:0 0 12px}
-  .grid{display:grid;gap:16px;margin-top:16px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:20px 22px}
+  .grid{display:grid;gap:18px;margin-top:18px}
   .g-7-5{grid-template-columns:7fr 5fr}
-  .g-5-7{grid-template-columns:5fr 7fr}
   .g-6-6{grid-template-columns:1fr 1fr}
-  .g-8-4{grid-template-columns:2fr 1fr}
   .grid > *{min-width:0}
-  .stack{display:grid;gap:16px;align-content:start;min-width:0}
-  .stack > *{min-width:0}
-  .legend{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12.5px;color:var(--muted);margin:0 0 10px}
-  .legend .sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
-  .muted{color:var(--muted)}
+  td.t,th.t{text-align:left}
 
   /* Hero bridge */
-  .hero{padding:26px 28px 22px;border-radius:12px;margin-top:22px}
-  .headline{font-size:24px;line-height:1.35;font-weight:500;margin:0 0 18px;max-width:32em}
-  .headline .n{font-weight:700;color:var(--net-hi)} .headline .d{font-weight:700;color:var(--disc)} .headline .g{font-weight:700}
-  .bleg{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:8px;font-size:13px;color:var(--muted)}
-  .bleg b{color:var(--ink);font-weight:600}
-  .bleg .sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+  .hero{padding:26px 28px 22px;border-radius:12px}
+  .headline{font-size:24px;line-height:1.35;font-weight:500;margin:0 0 18px;max-width:30em;letter-spacing:-0.005em}
+  .headline .n{font-weight:700;color:var(--net)}
+  .headline .d{font-weight:700;color:var(--disc)}
+  .headline .g{font-weight:700}
+  #bridge{width:100%}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 18px;margin-top:8px;font-size:13px;color:var(--muted)}
+  .legend b{color:var(--ink);font-weight:600}
+  .legend .sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
 
-  /* KPIs */
-  .kpis{display:grid;grid-template-columns:repeat(6,1fr);margin-top:16px;background:var(--panel);border:1px solid var(--line);border-radius:8px}
+  /* KPI strip */
+  .kpis{display:grid;grid-template-columns:repeat(6,1fr);margin-top:18px;background:var(--panel);border:1px solid var(--line);border-radius:8px}
   .kpi{padding:14px 18px;border-left:1px solid var(--line)}
   .kpi:first-child{border-left:none}
+  .kpi .v{font-size:22px;font-weight:600;line-height:1.2}
   .kpi .k{color:var(--muted);font-size:13px}
-  .kpi .v{font-size:22px;font-weight:650;line-height:1.25}
   .kpi .s{color:var(--muted);font-size:12px}
 
-  /* Lists */
-  ul.plain{list-style:none;margin:0;padding:0}
-  ul.plain li{padding:9px 0;border-top:1px solid var(--line2)}
-  ul.plain li:first-child{border-top:none;padding-top:2px}
-  .ins li{margin:7px 0}
-  .ins{margin:0;padding-left:18px}
-  .tag{display:inline-block;font-size:11.5px;font-weight:650;padding:2px 8px;border-radius:999px;white-space:nowrap;vertical-align:1px;margin-right:6px}
-  .tag.good{background:#153126;color:#7FD9AA} .tag.warn{background:#35260F;color:#F4BC72}
-  .tag.bad{background:#37161F;color:#F58CA6} .tag.neutral{background:#172A36;color:#8FCDEB}
-  .act-title{font-weight:600}
-  .act-ev{color:var(--muted);font-size:14px;margin-top:1px}
-  .act-group h3{margin:0 0 6px}
+  /* Insights */
+  .insights ul{margin:0;padding-left:18px}
+  .insights li{margin:6px 0;max-width:70em}
 
   /* Tables */
-  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  table{width:100%;border-collapse:collapse;font-size:14px}
   th{font-weight:600;color:var(--muted);font-size:12.5px;text-align:right;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
-  td{padding:7px 8px;text-align:right;border-bottom:1px solid var(--line2);white-space:nowrap}
-  th:first-child,td:first-child,th.t,td.t{text-align:left}
+  td{padding:7px 8px;text-align:right;border-bottom:1px solid #EEF2F1;white-space:nowrap}
+  th:first-child,td:first-child{text-align:left}
   .tscroll{overflow-x:auto}
-  #seg-table th,#seg-table td{padding-left:5px;padding-right:5px}
-  tr.clickable{cursor:pointer}
-  tr.clickable:hover td{background:#1A2229}
-  tr.focused td{background:#18303F}
   .barcell{display:flex;align-items:center;gap:8px;justify-content:flex-end}
-  .track{flex:0 0 80px;height:9px;background:#232C34;border-radius:2px;display:flex}
-  .minibar{height:9px;border-radius:2px;background:var(--net)}
+  .minibar{height:10px;border-radius:2px;background:var(--net)}
   .minibar.d{background:var(--disc)}
-  .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:1px}
+  .track{flex:0 0 90px;height:10px;background:#F1F4F3;border-radius:2px;display:flex}
   th button{all:unset;cursor:pointer}
   th[aria-sort="descending"] button::after{content:" ▾"}
   th[aria-sort="ascending"] button::after{content:" ▴"}
-  .heat td{text-align:center;font-size:12.5px;border:2px solid var(--panel);border-radius:4px;padding:8px 6px}
+  .cat-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px;vertical-align:1px}
+
+  /* Heatmap */
+  .heat td{text-align:center;font-size:13px;border:2px solid var(--panel);border-radius:4px;padding:10px 6px}
   .heat td:first-child{text-align:left;font-weight:600;background:none}
-  .heat th{text-align:center} .heat th:first-child{text-align:left}
-  .heat td.c{cursor:pointer}
-  .price td{padding:5px 4px;font-size:12px}
-  .price td:first-child{font-weight:500}
-  .ord{display:inline-block;min-width:16px;height:16px;line-height:16px;border-radius:8px;background:#F1F5F7;color:#0A0D10;font-size:10.5px;font-weight:700;margin-left:4px;padding:0 3px}
+  .heat th{text-align:center}
+  .heat th:first-child{text-align:left}
 
-  /* Segment + loyalty */
-  .minis{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-  .mini .t{font-size:12.5px;color:var(--muted);margin-bottom:2px}
-  .toggle{display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden;margin-bottom:10px}
-  .toggle button{border:none;background:var(--panel);padding:4px 12px;font-size:13px;cursor:pointer}
-  .toggle button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
-  .fly{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:9px 12px;align-items:center;font-size:13.5px}
-  .fly .l{display:flex;justify-content:flex-end;align-items:center;gap:8px}
-  .fly .r{display:flex;align-items:center;gap:8px}
-  .fly .bar{height:12px;border-radius:2px}
-  .fly .trk{flex:1 1 110px;max-width:110px;min-width:24px;display:flex}
-  .fly .l .trk{justify-content:flex-end}
-  .fly .mid{color:var(--muted);text-align:center;font-size:12.5px;min-width:130px}
-  .fly .hd{font-weight:600;font-size:13px;cursor:pointer;background:none;border:none;padding:0}
+  .empty{padding:40px 22px;text-align:center;color:var(--muted)}
+  footer{margin-top:22px;color:var(--muted);font-size:13px;max-width:78em}
+  footer p{margin:4px 0}
 
-  /* Data model */
-  .model{display:grid;grid-template-columns:1fr auto 1.2fr auto 1fr;gap:8px;align-items:center;margin-top:10px}
-  .tbl{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--panel);font-size:13px}
-  .tbl b{display:block;font-size:14px}
-  .tbl span{color:var(--muted)}
-  .tbl.main{border-color:var(--net);border-width:2px}
-  .join{font-size:12px;color:var(--net-hi);text-align:center;font-weight:600}
-  .join::before,.join::after{content:"";display:block;height:1px;background:var(--net);opacity:.5;margin:3px 0}
-  .model .down{grid-column:3;text-align:center}
-  .model .down .join::before,.model .down .join::after{display:none}
-  .model .under{grid-column:3}
-
-  #tip{position:fixed;z-index:60;pointer-events:none;background:#F1F5F7;color:#0A0D10;font-size:12.5px;box-shadow:0 4px 18px rgba(0,0,0,.5);line-height:1.45;padding:7px 10px;border-radius:6px;max-width:270px;opacity:0}
-  .empty{padding:40px 22px;text-align:center;color:var(--muted);margin-top:22px}
-  footer{margin-top:44px;color:var(--muted);font-size:13px}
-  footer p{max-width:85ch}
-
-  @media (max-width:1020px){
-    .g-7-5,.g-5-7,.g-6-6,.g-8-4{grid-template-columns:1fr}
+  @media (max-width:980px){
+    .g-7-5,.g-6-6{grid-template-columns:1fr}
     .kpis{grid-template-columns:repeat(3,1fr)}
     .kpi:nth-child(4){border-left:none}
     .kpi:nth-child(n+4){border-top:1px solid var(--line)}
-    .active-f{margin-left:0}
   }
-  @media (max-width:640px){
+  @media (max-width:560px){
     .wrap{padding:18px 14px 40px}
-    .topbar-in{padding:6px 14px;gap:2px 10px}
-    .mark{display:none}
-    nav{flex-wrap:nowrap;overflow-x:auto;width:100%;margin:0 -6px}
-    nav a{padding:4px 7px;white-space:nowrap}
-    .active-f{font-size:12px}
     h1{font-size:22px}
     .headline{font-size:19px}
     .hero{padding:18px 16px}
-    .panel{padding:15px}
-    .filters{grid-template-columns:1fr;gap:4px 0}
-    .filters .chips{margin-bottom:6px}
+    .panel{padding:16px}
     .kpis{grid-template-columns:repeat(2,1fr)}
     .kpi{border-left:1px solid var(--line)!important;border-top:1px solid var(--line)}
     .kpi:nth-child(odd){border-left:none!important}
     .kpi:nth-child(-n+2){border-top:none}
-    .minis{grid-template-columns:1fr}
-    .model{grid-template-columns:1fr}
-    .model .down,.model .under{grid-column:1}
-    .fly .mid{min-width:0;max-width:96px;font-size:12px}
-    .fly{gap:9px 6px;font-size:12.5px}
   }
 </style>
 </head>
 <body>
-<div class="topbar">
-  <div class="topbar-in">
-    <span class="mark">D2C performance 2024</span>
-    <nav aria-label="Sections">
-      <a href="#overview">Overview</a><a href="#channels">Channels</a><a href="#products">Products</a><a href="#customers">Customers</a><a href="#actions">Actions</a>
-    </nav>
-    <div class="active-f" id="active-f" aria-live="polite"></div>
-  </div>
-</div>
-
 <div class="wrap">
   <header>
-    <h1>Channel, product and customer performance</h1>
-    <p class="sub">D2C beauty and wellness brand, orders placed January to December 2024. <span id="scope"></span></p>
+    <h1>Channel and product performance, 2024</h1>
+    <p class="sub">D2C beauty and wellness brand. <span id="scope"></span></p>
     <div class="filters" role="group" aria-label="Filters">
-      <span class="lbl">Channel</span><div class="chips" id="f-ch"></div>
-      <span class="lbl">Category</span><div class="chips" id="f-cat"></div>
-      <span class="lbl">Segment</span><div class="chips" id="f-seg"></div>
-      <span class="lbl">Loyalty</span><div class="chips" id="f-loyal"></div>
-      <div class="foot"><span>Click any bar, row, dot or cell to focus the whole page on it. Click it again to clear.</span>
-        <button class="linkbtn" type="button" data-reset>Reset all filters</button></div>
+      <div class="fgroup" id="f-ch"><span class="lbl">Channel</span></div>
+      <div class="fgroup" id="f-cat"><span class="lbl">Category</span></div>
+      <button class="linkbtn" id="reset" type="button">Reset filters</button>
     </div>
   </header>
 
   <main id="content">
-    <!-- OVERVIEW -->
-    <section class="block" id="overview" aria-labelledby="ov-h">
-      <h2 id="ov-h" hidden>Overview</h2>
-      <div class="panel hero">
-        <p class="headline" id="headline"></p>
-        <div id="bridge"></div>
-        <div class="bleg" id="bridge-legend"></div>
-      </div>
-      <div class="kpis" id="kpis" aria-label="Key metrics"></div>
-      <div class="grid g-7-5">
-        <div class="panel"><h3>What stands out</h3><p class="note">Written from the orders currently selected.</p><ul class="ins" id="insights"></ul></div>
-        <div class="panel"><h3>Top actions</h3><p class="note">The strongest suggestion in each area. <a href="#actions" class="linkbtn">See all actions</a></p><ul class="plain" id="top-actions"></ul></div>
-      </div>
+    <section class="panel hero" aria-labelledby="headline">
+      <p class="headline" id="headline"></p>
+      <div id="bridge"></div>
+      <div class="legend" id="bridge-legend"></div>
     </section>
 
-    <!-- CHANNELS -->
-    <section class="block" id="channels">
-      <h2>Channels</h2>
-      <p class="lead">Where orders come from, what each channel costs in discounts, and how each one moved through the year.</p>
-      <div class="grid g-7-5">
-        <div class="panel"><h3>Channel scorecard</h3><p class="note">Sorted by net revenue. Avg discount is the mean discount % per order.</p>
-          <div class="tscroll"><table id="channel-table"></table></div></div>
-        <div class="panel"><h3>First half vs second half</h3><p class="note">Net revenue in Jan–Jun (hollow) vs Jul–Dec (filled).</p>
-          <div id="momentum"></div></div>
-      </div>
-      <div class="grid">
-        <div class="panel"><h3>Net revenue by month and channel</h3><p class="note">Each bar is split by the channel the order came through.</p>
-          <div class="legend" id="monthly-legend"></div><div id="monthly"></div></div>
-      </div>
-      <div class="grid g-6-6">
-        <div class="panel"><h3>Price list: discount by product and channel</h3>
-          <p class="note">From the product_pricing table. Brighter means a deeper discount; the white badge counts orders in the current selection.</p>
-          <div class="tscroll"><table class="heat price" id="pricing"></table></div></div>
-        <div class="stack">
-          <div class="panel"><h3>Net revenue by channel and category</h3><p class="note">Brighter cells earn more. Dashes mark combinations with no orders.</p>
-            <div class="tscroll"><table class="heat" id="heatmap"></table></div>
-            <div id="gaps" class="note" style="margin-top:12px"></div></div>
-          <div class="panel"><h3>Net revenue by city</h3><p class="note">Where orders were delivered. Click a city to focus on it.</p><div id="cities"></div></div>
-        </div>
-      </div>
+    <section class="kpis" id="kpis" aria-label="Key metrics"></section>
+
+    <section class="panel insights" style="margin-top:18px" aria-labelledby="ins-h">
+      <h2 id="ins-h">What stands out</h2>
+      <p class="note">Generated from the orders currently selected.</p>
+      <ul id="insights"></ul>
     </section>
 
-    <!-- PRODUCTS -->
-    <section class="block" id="products">
-      <h2>Products</h2>
-      <p class="lead">Which products earn the money, which ones keep the most of it, and what to do with each.</p>
-      <div class="grid g-7-5">
-        <div class="panel"><h3>Product action matrix</h3>
-          <p class="note">Net revenue (across) against gross margin (up). The dashed lines are the medians, which split products into four groups. Bubble size is units sold.</p>
-          <div class="legend" id="matrix-legend"></div><div id="matrix"></div></div>
-        <div class="panel"><h3>Suggestions by product</h3><p class="note">Rule-based, from sales rank, margin, discount and hero status.</p>
-          <ul class="plain" id="recs"></ul><button class="linkbtn" type="button" id="recs-more" style="margin-top:8px"></button></div>
-      </div>
-      <div class="grid g-6-6">
-        <div class="panel"><h3>Products ranked by net revenue</h3><p class="note">Bar colour is category; the percentage is gross margin. Hero products are in bold.</p>
-          <div class="legend" id="cat-legend"></div><div id="ranking"></div></div>
-        <div class="panel"><h3>Hero products</h3><p class="note">The five products flagged is_hero_product = Y in the catalog, compared with the rest.</p>
-          <div class="tscroll"><table id="hero-compare"></table></div>
-          <h3 style="margin-top:16px">How each hero is doing</h3><div id="hero-list"></div></div>
-      </div>
-      <div class="grid">
-        <div class="panel"><h3>Product detail</h3><p class="note">Select a column heading to sort. The action comes from the matrix group.</p>
-          <div class="tscroll"><table id="product-table"></table></div></div>
-      </div>
-    </section>
+    <div class="grid g-7-5">
+      <section class="panel" aria-labelledby="ch-h">
+        <h2 id="ch-h">Channel scorecard</h2>
+        <p class="note">Sorted by net revenue. Avg discount is the mean discount % applied per order.</p>
+        <div class="tscroll"><table id="channel-table"></table></div>
+      </section>
+      <section class="panel" aria-labelledby="tr-h">
+        <h2 id="tr-h">Net revenue by month</h2>
+        <p class="note">Orders placed January to December 2024.</p>
+        <div id="trend"></div>
+      </section>
+    </div>
 
-    <!-- CUSTOMERS -->
-    <section class="block" id="customers">
-      <h2>Customers</h2>
-      <p class="lead">Gold, Silver and Bronze customers, loyalty members, where customers were acquired, and who spends the most.</p>
-      <div class="grid g-5-7">
-        <div class="panel"><h3>Gold, Silver and Bronze customers</h3><p class="note">Click a bar to focus on that segment.</p>
-          <div class="minis" id="seg-minis"></div>
-          <div class="tscroll" style="margin-top:12px"><table id="seg-table"></table></div></div>
-        <div class="panel"><h3>Where each segment spends</h3><p class="note">Share of each segment's net revenue.</p>
-          <div class="toggle" role="group" aria-label="Split by"><button type="button" data-mix="ch" aria-pressed="true">By channel</button><button type="button" data-mix="cat" aria-pressed="false">By category</button></div>
-          <div class="legend" id="mix-legend"></div><div id="seg-mix"></div>
-          <p class="note" id="seg-note" style="margin:10px 0 0"></p></div>
-      </div>
-      <div class="grid g-5-7">
-        <div class="panel"><h3>Loyalty members vs non-members</h3><p class="note">From is_loyalty_member in the customers table.</p>
-          <div id="loyalty"></div><p class="note" id="loyal-note" style="margin:12px 0 0"></p></div>
-        <div class="panel"><h3>Where customers were acquired vs where they buy</h3>
-          <p class="note">Rows are acquisition_channel from the customers table; columns are the channel each order came through.</p>
-          <div class="tscroll"><table class="heat" id="acq"></table></div><p class="note" id="acq-note" style="margin:10px 0 0"></p></div>
-      </div>
-      <div class="grid">
-        <div class="panel"><h3>Top customers</h3><p class="note">The ten biggest spenders, joining orders to the customers table. Click a customer to see only their orders.</p>
-          <div class="tscroll"><table id="top-cust"></table></div></div>
-      </div>
-    </section>
+    <div class="grid g-6-6">
+      <section class="panel" aria-labelledby="pr-h">
+        <h2 id="pr-h">Products ranked by net revenue</h2>
+        <p class="note">Bar colour shows category; the percentage is gross margin.</p>
+        <div class="legend" id="cat-legend" style="margin:-4px 0 10px"></div>
+        <div id="ranking"></div>
+      </section>
+      <section class="panel" aria-labelledby="hm-h">
+        <h2 id="hm-h">Net revenue by channel and category</h2>
+        <p class="note">Darker cells earn more. Blank cells had no orders.</p>
+        <div class="tscroll"><table class="heat" id="heatmap"></table></div>
+      </section>
+    </div>
 
-    <!-- ACTIONS -->
-    <section class="block" id="actions">
-      <h2>Actions</h2>
-      <p class="lead">Suggestions drawn from the numbers above. They update with the filters, so focus on a channel or segment to get a plan for it.</p>
-      <div class="grid g-6-6" id="action-groups"></div>
+    <section class="panel" style="margin-top:18px" aria-labelledby="pt-h">
+      <h2 id="pt-h">Product detail</h2>
+      <p class="note">Select a column heading to sort.</p>
+      <div class="tscroll"><table id="product-table"></table></div>
     </section>
   </main>
 
   <section class="panel empty" id="empty" hidden>
     <p><strong>No orders match these filters.</strong></p>
-    <p>Turn on at least one option in each filter row.</p>
-    <button class="linkbtn" type="button" data-reset>Reset all filters</button>
+    <p>Turn on at least one channel and one category.</p>
+    <button class="linkbtn" type="button" id="reset2">Reset filters</button>
   </section>
 
   <footer>
-    <h3 style="color:var(--ink);font-size:15px;margin:0">How the four tables connect</h3>
-    <div class="model">
-      <div class="tbl"><b>customers</b><span>segment, loyalty, acquisition channel</span></div>
-      <div class="join">customer_id</div>
-      <div class="tbl main"><b>orders</b><span>date, city, category, product, channel, quantity, MRP</span></div>
-      <div class="join">product_name + channel</div>
-      <div class="tbl"><b>product_pricing</b><span>discount_pct</span></div>
-      <div class="down"><div class="join">category + product_name ↓</div></div>
-      <div class="tbl under"><b>product_catalog</b><span>brand, cost_price, is_hero_product</span></div>
-    </div>
-    <p style="margin-top:16px"><strong>How the numbers are calculated.</strong> List value = quantity × MRP. Net revenue = quantity × MRP × (1 − discount % / 100), with the discount matched on product and channel together.
-    Discount = list value − net revenue. Gross margin = net revenue − quantity × cost price. Orders = distinct order IDs; AOV = net revenue ÷ orders.
-    Suggestions are rule-based and based on only 50 orders, so treat them as directional.</p>
-    <p>Source: BI intern assignment workbook. This page is self-contained and works offline.</p>
+    <p><strong>How the numbers are calculated.</strong> Discount % is matched to each order on product and channel together, since the same product is discounted differently on each channel.
+    List value = quantity × MRP. Net revenue = quantity × MRP × (1 − discount % / 100). Discount = list value − net revenue.
+    Gross margin = net revenue − quantity × cost price. Orders = distinct order IDs; AOV = net revenue ÷ orders.</p>
+    <p>Source: BI intern assignment workbook (orders, customers, product_catalog, product_pricing). This page is self-contained and works offline.</p>
   </footer>
 </div>
-<div id="tip" role="tooltip"></div>
 
 <script>
-const RAW = [{"id":1001,"d":"2024-11-23","cu":"C103","name":"Ananya Kapoor","seg":"Gold","loyal":"Y","acq":"Facebook","city":"Chennai","state":"TN","cat":"Haircare","prod":"Hair Mask","brand":"Pilgrim","hero":"Y","qty":2,"ch":"Website","mrp":1047.0,"disc":12.0,"cost":366.45},{"id":1002,"d":"2024-10-29","cu":"C113","name":"Rohit Chopra","seg":"Silver","loyal":"Y","acq":"Influencer","city":"Mumbai","state":"MH","cat":"Skincare","prod":"Sunscreen SPF50","brand":"Minimalist","hero":"Y","qty":2,"ch":"Amazon","mrp":1442.0,"disc":20.0,"cost":547.96},{"id":1003,"d":"2024-04-11","cu":"C122","name":"Manish Soni","seg":"Silver","loyal":"N","acq":"Instagram","city":"Jaipur","state":"RJ","cat":"Makeup","prod":"Lipstick","brand":"Faces Canada","hero":"N","qty":4,"ch":"App","mrp":955.0,"disc":5.0,"cost":382.0},{"id":1004,"d":"2024-12-23","cu":"C113","name":"Rohit Chopra","seg":"Silver","loyal":"Y","acq":"Influencer","city":"Chennai","state":"TN","cat":"Haircare","prod":"Hair Mask","brand":"Pilgrim","hero":"Y","qty":3,"ch":"Website","mrp":1047.0,"disc":12.0,"cost":366.45},{"id":1005,"d":"2024-07-02","cu":"C127","name":"Sunita Reddy","seg":"Bronze","loyal":"Y","acq":"Instagram","city":"Lucknow","state":"UP","cat":"Wellness","prod":"Collagen Supplement","brand":"OZiva","hero":"Y","qty":4,"ch":"Website","mrp":1453.0,"disc":12.0,"cost":464.96},{"id":1006,"d":"2024-10-09","cu":"C109","name":"Divya Lal","seg":"Silver","loyal":"Y","acq":"Referral","city":"Lucknow","state":"UP","cat":"Wellness","prod":"Ashwagandha","brand":"Fast&Up","hero":"N","qty":2,"ch":"App","mrp":1410.0,"disc":5.0,"cost":451.2},{"id":1007,"d":"2024-05-28","cu":"C102","name":"Rahul Mehta","seg":"Gold","loyal":"Y","acq":"Google Ads","city":"Hyderabad","state":"TS","cat":"Skincare","prod":"Face Wash","brand":"Dot & Key","hero":"N","qty":3,"ch":"App","mrp":1215.0,"disc":0.0,"cost":461.7},{"id":1008,"d":"2024-07-08","cu":"C111","name":"Nikhil Bose","seg":"Silver","loyal":"Y","acq":"Organic","city":"Chennai","state":"TN","cat":"Skincare","prod":"Night Cream","brand":"Dot & Key","hero":"N","qty":2,"ch":"App","mrp":1488.0,"disc":5.0,"cost":565.44},{"id":1009,"d":"2024-08-24","cu":"C112","name":"Shreya Joshi","seg":"Silver","loyal":"N","acq":"Google Ads","city":"Jaipur","state":"RJ","cat":"Haircare","prod":"Conditioner","brand":"Tresemme","hero":"N","qty":1,"ch":"Instagram","mrp":1395.0,"disc":10.0,"cost":488.25},{"id":1010,"d":"2024-07-24","cu":"C108","name":"Arjun Tiwari","seg":"Gold","loyal":"N","acq":"Google Ads","city":"Hyderabad","state":"TS","cat":"Wellness","prod":"Vitamin D3","brand":"The Whole Truth","hero":"N","qty":4,"ch":"App","mrp":1449.0,"disc":5.0,"cost":463.68},{"id":1011,"d":"2024-05-15","cu":"C104","name":"Deepak Verma","seg":"Gold","loyal":"N","acq":"Instagram","city":"Jaipur","state":"RJ","cat":"Wellness","prod":"Ashwagandha","brand":"Fast&Up","hero":"N","qty":4,"ch":"Instagram","mrp":1410.0,"disc":10.0,"cost":451.2},{"id":1012,"d":"2024-04-22","cu":"C104","name":"Deepak Verma","seg":"Gold","loyal":"N","acq":"Instagram","city":"Kolkata","state":"WB","cat":"Skincare","prod":"Vitamin C Serum","brand":"Plum","hero":"Y","qty":1,"ch":"WhatsApp","mrp":1813.0,"disc":7.0,"cost":688.94},{"id":1013,"d":"2024-11-01","cu":"C102","name":"Rahul Mehta","seg":"Gold","loyal":"Y","acq":"Google Ads","city":"Ahmedabad","state":"GJ","cat":"Makeup","prod":"Eyeliner","brand":"Faces Canada","hero":"N","qty":3,"ch":"Website","mrp":1426.0,"disc":8.0,"cost":570.4},{"id":1014,"d":"2024-12-15","cu":"C128","name":"Harish Pillai","seg":"Bronze","loyal":"N","acq":"Referral","city":"Chennai","state":"TN","cat":"Wellness","prod":"Collagen Supplement","brand":"OZiva","hero":"Y","qty":3,"ch":"Website","mrp":1453.0,"disc":12.0,"cost":464.96},{"id":1015,"d":"2024-05-14","cu":"C116","name":"Pooja Desai","seg":"Silver","loyal":"Y","acq":"Google Ads","city":"Bengaluru","state":"KA","cat":"Skincare","prod":"Moisturizer","brand":"Dot & Key","hero":"N","qty":5,"ch":"Instagram","mrp":1358.0,"disc":8.0,"cost":516.04},{"id":1016,"d":"2024-03-23","cu":"C117","name":"Amit Gupta","seg":"Silver","loyal":"Y","acq":"Instagram","city":"Jaipur","state":"RJ","cat":"Skincare","prod":"Night Cream","brand":"Dot & Key","hero":"N","qty":3,"ch":"Instagram","mrp":1488.0,"disc":10.0,"cost":565.44},{"id":1017,"d":"2024-06-06","cu":"C107","name":"Kavya Nair","seg":"Gold","loyal":"Y","acq":"Organic","city":"Hyderabad","state":"TS","cat":"Skincare","prod":"Vitamin C Serum","brand":"Plum","hero":"Y","qty":4,"ch":"App","mrp":1813.0,"disc":5.0,"cost":688.94},{"id":1018,"d":"2024-03-06","cu":"C121","name":"Ritu Agarwal","seg":"Silver","loyal":"Y","acq":"Organic","city":"Jaipur","state":"RJ","cat":"Haircare","prod":"Conditioner","brand":"Tresemme","hero":"N","qty":5,"ch":"App","mrp":1395.0,"disc":5.0,"cost":488.25},{"id":1019,"d":"2024-10-03","cu":"C124","name":"Farhan Sheikh","seg":"Bronze","loyal":"Y","acq":"Organic","city":"Hyderabad","state":"TS","cat":"Wellness","prod":"Probiotic Blend","brand":"Wellbeing Nutrition","hero":"N","qty":3,"ch":"WhatsApp","mrp":1441.0,"disc":8.0,"cost":461.12},{"id":1020,"d":"2024-03-02","cu":"C107","name":"Kavya Nair","seg":"Gold","loyal":"Y","acq":"Organic","city":"Delhi","state":"DL","cat":"Wellness","prod":"Collagen Supplement","brand":"OZiva","hero":"Y","qty":5,"ch":"App","mrp":1453.0,"disc":10.0,"cost":464.96},{"id":1021,"d":"2024-01-04","cu":"C102","name":"Rahul Mehta","seg":"Gold","loyal":"Y","acq":"Google Ads","city":"Mumbai","state":"MH","cat":"Haircare","prod":"Shampoo 250ml","brand":"Brillare","hero":"N","qty":1,"ch":"Amazon","mrp":2169.0,"disc":12.0,"cost":759.15},{"id":1022,"d":"2024-05-01","cu":"C108","name":"Arjun Tiwari","seg":"Gold","loyal":"N","acq":"Google Ads","city":"Kolkata","state":"WB","cat":"Haircare","prod":"Hair Oil","brand":"Arata","hero":"N","qty":2,"ch":"Amazon","mrp":777.0,"disc":20.0,"cost":271.95},{"id":1023,"d":"2024-08-30","cu":"C107","name":"Kavya Nair","seg":"Gold","loyal":"Y","acq":"Organic","city":"Kolkata","state":"WB","cat":"Makeup","prod":"Lipstick","brand":"Faces Canada","hero":"N","qty":1,"ch":"Instagram","mrp":955.0,"disc":15.0,"cost":382.0},{"id":1024,"d":"2024-08-04","cu":"C113","name":"Rohit Chopra","seg":"Silver","loyal":"Y","acq":"Influencer","city":"Mumbai","state":"MH","cat":"Skincare","prod":"Vitamin C Serum","brand":"Plum","hero":"Y","qty":4,"ch":"App","mrp":1813.0,"disc":5.0,"cost":688.94},{"id":1025,"d":"2024-04-08","cu":"C106","name":"Sanjay Rao","seg":"Gold","loyal":"Y","acq":"Google Ads","city":"Kolkata","state":"WB","cat":"Haircare","prod":"Scalp Serum","brand":"Brillare","hero":"N","qty":2,"ch":"Website","mrp":529.0,"disc":5.0,"cost":185.15},{"id":1026,"d":"2024-08-14","cu":"C125","name":"Zara Mirza","seg":"Bronze","loyal":"N","acq":"Instagram","city":"Jaipur","state":"RJ","cat":"Skincare","prod":"Vitamin C Serum","brand":"Plum","hero":"Y","qty":5,"ch":"App","mrp":1813.0,"disc":5.0,"cost":688.94},{"id":1027,"d":"2024-03-26","cu":"C113","name":"Rohit Chopra","seg":"Silver","loyal":"Y","acq":"Influencer","city":"Kolkata","state":"WB","cat":"Haircare","prod":"Scalp Serum","brand":"Brillare","hero":"N","qty":1,"ch":"WhatsApp","mrp":529.0,"disc":5.0,"cost":185.15},{"id":1028,"d":"2024-05-15","cu":"C129","name":"Nandini Das","seg":"Bronze","loyal":"Y","acq":"Google Ads","city":"Kolkata","state":"WB","cat":"Wellness","prod":"Probiotic Blend","brand":"Wellbeing Nutrition","hero":"N","qty":5,"ch":"App","mrp":1441.0,"disc":8.0,"cost":461.12},{"id":1029,"d":"2024-04-07","cu":"C109","name":"Divya Lal","seg":"Silver","loyal":"Y","acq":"Referral","city":"Mumbai","state":"MH","cat":"Skincare","prod":"Moisturizer","brand":"Dot & Key","hero":"N","qty":1,"ch":"Amazon","mrp":1358.0,"disc":15.0,"cost":516.04},{"id":1030,"d":"2024-09-28","cu":"C105","name":"Meera Patel","seg":"Gold","loyal":"Y","acq":"Instagram","city":"Jaipur","state":"RJ","cat":"Skincare","prod":"Sunscreen SPF50","brand":"Minimalist","hero":"Y","qty":1,"ch":"WhatsApp","mrp":1442.0,"disc":8.0,"cost":547.96},{"id":1031,"d":"2024-03-02","cu":"C130","name":"Chirag Shah","seg":"Bronze","loyal":"N","acq":"Google Ads","city":"Lucknow","state":"UP","cat":"Haircare","prod":"Hair Oil","brand":"Arata","hero":"N","qty":5,"ch":"WhatsApp","mrp":777.0,"disc":5.0,"cost":271.95},{"id":1032,"d":"2024-12-02","cu":"C118","name":"Neha Hegde","seg":"Silver","loyal":"Y","acq":"Influencer","city":"Jaipur","state":"RJ","cat":"Wellness","prod":"Omega 3","brand":"Wellbeing Nutrition","hero":"Y","qty":2,"ch":"App","mrp":1161.0,"disc":5.0,"cost":371.52},{"id":1033,"d":"2024-05-15","cu":"C112","name":"Shreya Joshi","seg":"Silver","loyal":"N","acq":"Google Ads","city":"Chennai","state":"TN","cat":"Makeup","prod":"Foundation","brand":"Colorbar","hero":"N","qty":1,"ch":"Amazon","mrp":171.0,"disc":22.0,"cost":68.4},{"id":1034,"d":"2024-02-21","cu":"C102","name":"Rahul Mehta","seg":"Gold","loyal":"Y","acq":"Google Ads","city":"Hyderabad","state":"TS","cat":"Wellness","prod":"Vitamin D3","brand":"The Whole Truth","hero":"N","qty":3,"ch":"Instagram","mrp":1449.0,"disc":10.0,"cost":463.68},{"id":1035,"d":"2024-05-25","cu":"C105","name":"Meera Patel","seg":"Gold","loyal":"Y","acq":"Instagram","city":"Jaipur","state":"RJ","cat":"Wellness","prod":"Ashwagandha","brand":"Fast&Up","hero":"N","qty":5,"ch":"Instagram","mrp":1410.0,"disc":10.0,"cost":451.2},{"id":1036,"d":"2024-12-05","cu":"C103","name":"Ananya Kapoor","seg":"Gold","loyal":"Y","acq":"Facebook","city":"Bengaluru","state":"KA","cat":"Wellness","prod":"Collagen Supplement","brand":"OZiva","hero":"Y","qty":1,"ch":"Instagram","mrp":1453.0,"disc":15.0,"cost":464.96},{"id":1037,"d":"2024-05-24","cu":"C119","name":"Vikram Singh","seg":"Silver","loyal":"N","acq":"Instagram","city":"Pune","state":"MH","cat":"Haircare","prod":"Conditioner","brand":"Tresemme","hero":"N","qty":5,"ch":"Website","mrp":1395.0,"disc":8.0,"cost":488.25},{"id":1038,"d":"2024-11-20","cu":"C113","name":"Rohit Chopra","seg":"Silver","loyal":"Y","acq":"Influencer","city":"Chennai","state":"TN","cat":"Skincare","prod":"Vitamin C Serum","brand":"Plum","hero":"Y","qty":3,"ch":"App","mrp":1813.0,"disc":5.0,"cost":688.94},{"id":1039,"d":"2024-08-14","cu":"C117","name":"Amit Gupta","seg":"Silver","loyal":"Y","acq":"Instagram","city":"Ahmedabad","state":"GJ","cat":"Skincare","prod":"Vitamin C Serum","brand":"Plum","hero":"Y","qty":1,"ch":"Amazon","mrp":1813.0,"disc":18.0,"cost":688.94},{"id":1040,"d":"2024-01-19","cu":"C126","name":"Tarun Kumar","seg":"Bronze","loyal":"Y","acq":"Influencer","city":"Lucknow","state":"UP","cat":"Haircare","prod":"Scalp Serum","brand":"Brillare","hero":"N","qty":2,"ch":"Website","mrp":529.0,"disc":5.0,"cost":185.15},{"id":1041,"d":"2024-07-02","cu":"C106","name":"Sanjay Rao","seg":"Gold","loyal":"Y","acq":"Google Ads","city":"Hyderabad","state":"TS","cat":"Skincare","prod":"Moisturizer","brand":"Dot & Key","hero":"N","qty":5,"ch":"Amazon","mrp":1358.0,"disc":15.0,"cost":516.04},{"id":1042,"d":"2024-03-20","cu":"C129","name":"Nandini Das","seg":"Bronze","loyal":"Y","acq":"Google Ads","city":"Hyderabad","state":"TS","cat":"Haircare","prod":"Hair Mask","brand":"Pilgrim","hero":"Y","qty":4,"ch":"WhatsApp","mrp":1047.0,"disc":10.0,"cost":366.45},{"id":1043,"d":"2024-12-08","cu":"C127","name":"Sunita Reddy","seg":"Bronze","loyal":"Y","acq":"Instagram","city":"Hyderabad","state":"TS","cat":"Wellness","prod":"Vitamin D3","brand":"The Whole Truth","hero":"N","qty":1,"ch":"WhatsApp","mrp":1449.0,"disc":8.0,"cost":463.68},{"id":1044,"d":"2024-04-23","cu":"C106","name":"Sanjay Rao","seg":"Gold","loyal":"Y","acq":"Google Ads","city":"Kolkata","state":"WB","cat":"Wellness","prod":"Omega 3","brand":"Wellbeing Nutrition","hero":"Y","qty":2,"ch":"WhatsApp","mrp":1161.0,"disc":8.0,"cost":371.52},{"id":1045,"d":"2024-06-17","cu":"C108","name":"Arjun Tiwari","seg":"Gold","loyal":"N","acq":"Google Ads","city":"Delhi","state":"DL","cat":"Wellness","prod":"Omega 3","brand":"Wellbeing Nutrition","hero":"Y","qty":5,"ch":"Instagram","mrp":1161.0,"disc":12.0,"cost":371.52},{"id":1046,"d":"2024-01-15","cu":"C103","name":"Ananya Kapoor","seg":"Gold","loyal":"Y","acq":"Facebook","city":"Chennai","state":"TN","cat":"Haircare","prod":"Hair Oil","brand":"Arata","hero":"N","qty":3,"ch":"WhatsApp","mrp":777.0,"disc":5.0,"cost":271.95},{"id":1047,"d":"2024-06-25","cu":"C123","name":"Lakshmi Iyer","seg":"Bronze","loyal":"N","acq":"Facebook","city":"Pune","state":"MH","cat":"Makeup","prod":"Eyeliner","brand":"Faces Canada","hero":"N","qty":5,"ch":"App","mrp":1426.0,"disc":5.0,"cost":570.4},{"id":1048,"d":"2024-05-10","cu":"C101","name":"Priya Sharma","seg":"Gold","loyal":"N","acq":"Instagram","city":"Ahmedabad","state":"GJ","cat":"Skincare","prod":"Night Cream","brand":"Dot & Key","hero":"N","qty":5,"ch":"Instagram","mrp":1488.0,"disc":10.0,"cost":565.44},{"id":1049,"d":"2024-08-08","cu":"C102","name":"Rahul Mehta","seg":"Gold","loyal":"Y","acq":"Google Ads","city":"Pune","state":"MH","cat":"Wellness","prod":"Collagen Supplement","brand":"OZiva","hero":"Y","qty":3,"ch":"Instagram","mrp":1453.0,"disc":15.0,"cost":464.96},{"id":1050,"d":"2024-07-25","cu":"C122","name":"Manish Soni","seg":"Silver","loyal":"N","acq":"Instagram","city":"Jaipur","state":"RJ","cat":"Haircare","prod":"Hair Mask","brand":"Pilgrim","hero":"Y","qty":4,"ch":"App","mrp":1047.0,"disc":10.0,"cost":366.45}];
-const PRICING = [{"p":"Vitamin C Serum","ch":"App","d":5.0},{"p":"Vitamin C Serum","ch":"Website","d":8.0},{"p":"Vitamin C Serum","ch":"Instagram","d":10.0},{"p":"Vitamin C Serum","ch":"Amazon","d":18.0},{"p":"Vitamin C Serum","ch":"WhatsApp","d":7.0},{"p":"Sunscreen SPF50","ch":"App","d":5.0},{"p":"Sunscreen SPF50","ch":"Website","d":10.0},{"p":"Sunscreen SPF50","ch":"Instagram","d":12.0},{"p":"Sunscreen SPF50","ch":"Amazon","d":20.0},{"p":"Sunscreen SPF50","ch":"WhatsApp","d":8.0},{"p":"Moisturizer","ch":"App","d":0.0},{"p":"Moisturizer","ch":"Website","d":5.0},{"p":"Moisturizer","ch":"Instagram","d":8.0},{"p":"Moisturizer","ch":"Amazon","d":15.0},{"p":"Moisturizer","ch":"WhatsApp","d":5.0},{"p":"Face Wash","ch":"App","d":0.0},{"p":"Face Wash","ch":"Website","d":5.0},{"p":"Face Wash","ch":"Instagram","d":5.0},{"p":"Face Wash","ch":"Amazon","d":12.0},{"p":"Face Wash","ch":"WhatsApp","d":0.0},{"p":"Night Cream","ch":"App","d":5.0},{"p":"Night Cream","ch":"Website","d":8.0},{"p":"Night Cream","ch":"Instagram","d":10.0},{"p":"Night Cream","ch":"Amazon","d":18.0},{"p":"Night Cream","ch":"WhatsApp","d":5.0},{"p":"Hair Mask","ch":"App","d":10.0},{"p":"Hair Mask","ch":"Website","d":12.0},{"p":"Hair Mask","ch":"Instagram","d":15.0},{"p":"Hair Mask","ch":"Amazon","d":22.0},{"p":"Hair Mask","ch":"WhatsApp","d":10.0},{"p":"Conditioner","ch":"App","d":5.0},{"p":"Conditioner","ch":"Website","d":8.0},{"p":"Conditioner","ch":"Instagram","d":10.0},{"p":"Conditioner","ch":"Amazon","d":18.0},{"p":"Conditioner","ch":"WhatsApp","d":8.0},{"p":"Shampoo 250ml","ch":"App","d":0.0},{"p":"Shampoo 250ml","ch":"Website","d":5.0},{"p":"Shampoo 250ml","ch":"Instagram","d":5.0},{"p":"Shampoo 250ml","ch":"Amazon","d":12.0},{"p":"Shampoo 250ml","ch":"WhatsApp","d":0.0},{"p":"Scalp Serum","ch":"App","d":5.0},{"p":"Scalp Serum","ch":"Website","d":5.0},{"p":"Scalp Serum","ch":"Instagram","d":8.0},{"p":"Scalp Serum","ch":"Amazon","d":15.0},{"p":"Scalp Serum","ch":"WhatsApp","d":5.0},{"p":"Hair Oil","ch":"App","d":0.0},{"p":"Hair Oil","ch":"Website","d":8.0},{"p":"Hair Oil","ch":"Instagram","d":10.0},{"p":"Hair Oil","ch":"Amazon","d":20.0},{"p":"Hair Oil","ch":"WhatsApp","d":5.0},{"p":"Collagen Supplement","ch":"App","d":10.0},{"p":"Collagen Supplement","ch":"Website","d":12.0},{"p":"Collagen Supplement","ch":"Instagram","d":15.0},{"p":"Collagen Supplement","ch":"Amazon","d":20.0},{"p":"Collagen Supplement","ch":"WhatsApp","d":10.0},{"p":"Vitamin D3","ch":"App","d":5.0},{"p":"Vitamin D3","ch":"Website","d":8.0},{"p":"Vitamin D3","ch":"Instagram","d":10.0},{"p":"Vitamin D3","ch":"Amazon","d":18.0},{"p":"Vitamin D3","ch":"WhatsApp","d":8.0},{"p":"Omega 3","ch":"App","d":5.0},{"p":"Omega 3","ch":"Website","d":10.0},{"p":"Omega 3","ch":"Instagram","d":12.0},{"p":"Omega 3","ch":"Amazon","d":20.0},{"p":"Omega 3","ch":"WhatsApp","d":8.0},{"p":"Probiotic Blend","ch":"App","d":8.0},{"p":"Probiotic Blend","ch":"Website","d":10.0},{"p":"Probiotic Blend","ch":"Instagram","d":12.0},{"p":"Probiotic Blend","ch":"Amazon","d":18.0},{"p":"Probiotic Blend","ch":"WhatsApp","d":8.0},{"p":"Ashwagandha","ch":"App","d":5.0},{"p":"Ashwagandha","ch":"Website","d":8.0},{"p":"Ashwagandha","ch":"Instagram","d":10.0},{"p":"Ashwagandha","ch":"Amazon","d":15.0},{"p":"Ashwagandha","ch":"WhatsApp","d":5.0},{"p":"Lipstick","ch":"App","d":5.0},{"p":"Lipstick","ch":"Website","d":10.0},{"p":"Lipstick","ch":"Instagram","d":15.0},{"p":"Lipstick","ch":"Amazon","d":20.0},{"p":"Lipstick","ch":"WhatsApp","d":10.0},{"p":"Eyeliner","ch":"App","d":5.0},{"p":"Eyeliner","ch":"Website","d":8.0},{"p":"Eyeliner","ch":"Instagram","d":12.0},{"p":"Eyeliner","ch":"Amazon","d":18.0},{"p":"Eyeliner","ch":"WhatsApp","d":8.0},{"p":"Foundation","ch":"App","d":10.0},{"p":"Foundation","ch":"Website","d":12.0},{"p":"Foundation","ch":"Instagram","d":15.0},{"p":"Foundation","ch":"Amazon","d":22.0},{"p":"Foundation","ch":"WhatsApp","d":10.0}];
+const RAW = [{"id":1001,"d":"2024-11-23","cu":"C103","seg":"Gold","city":"Chennai","cat":"Haircare","prod":"Hair Mask","brand":"Pilgrim","qty":2,"ch":"Website","mrp":1047.0,"disc":12.0,"cost":366.45},{"id":1002,"d":"2024-10-29","cu":"C113","seg":"Silver","city":"Mumbai","cat":"Skincare","prod":"Sunscreen SPF50","brand":"Minimalist","qty":2,"ch":"Amazon","mrp":1442.0,"disc":20.0,"cost":547.96},{"id":1003,"d":"2024-04-11","cu":"C122","seg":"Silver","city":"Jaipur","cat":"Makeup","prod":"Lipstick","brand":"Faces Canada","qty":4,"ch":"App","mrp":955.0,"disc":5.0,"cost":382.0},{"id":1004,"d":"2024-12-23","cu":"C113","seg":"Silver","city":"Chennai","cat":"Haircare","prod":"Hair Mask","brand":"Pilgrim","qty":3,"ch":"Website","mrp":1047.0,"disc":12.0,"cost":366.45},{"id":1005,"d":"2024-07-02","cu":"C127","seg":"Bronze","city":"Lucknow","cat":"Wellness","prod":"Collagen Supplement","brand":"OZiva","qty":4,"ch":"Website","mrp":1453.0,"disc":12.0,"cost":464.96},{"id":1006,"d":"2024-10-09","cu":"C109","seg":"Silver","city":"Lucknow","cat":"Wellness","prod":"Ashwagandha","brand":"Fast&Up","qty":2,"ch":"App","mrp":1410.0,"disc":5.0,"cost":451.2},{"id":1007,"d":"2024-05-28","cu":"C102","seg":"Gold","city":"Hyderabad","cat":"Skincare","prod":"Face Wash","brand":"Dot & Key","qty":3,"ch":"App","mrp":1215.0,"disc":0.0,"cost":461.7},{"id":1008,"d":"2024-07-08","cu":"C111","seg":"Silver","city":"Chennai","cat":"Skincare","prod":"Night Cream","brand":"Dot & Key","qty":2,"ch":"App","mrp":1488.0,"disc":5.0,"cost":565.44},{"id":1009,"d":"2024-08-24","cu":"C112","seg":"Silver","city":"Jaipur","cat":"Haircare","prod":"Conditioner","brand":"Tresemme","qty":1,"ch":"Instagram","mrp":1395.0,"disc":10.0,"cost":488.25},{"id":1010,"d":"2024-07-24","cu":"C108","seg":"Gold","city":"Hyderabad","cat":"Wellness","prod":"Vitamin D3","brand":"The Whole Truth","qty":4,"ch":"App","mrp":1449.0,"disc":5.0,"cost":463.68},{"id":1011,"d":"2024-05-15","cu":"C104","seg":"Gold","city":"Jaipur","cat":"Wellness","prod":"Ashwagandha","brand":"Fast&Up","qty":4,"ch":"Instagram","mrp":1410.0,"disc":10.0,"cost":451.2},{"id":1012,"d":"2024-04-22","cu":"C104","seg":"Gold","city":"Kolkata","cat":"Skincare","prod":"Vitamin C Serum","brand":"Plum","qty":1,"ch":"WhatsApp","mrp":1813.0,"disc":7.0,"cost":688.94},{"id":1013,"d":"2024-11-01","cu":"C102","seg":"Gold","city":"Ahmedabad","cat":"Makeup","prod":"Eyeliner","brand":"Faces Canada","qty":3,"ch":"Website","mrp":1426.0,"disc":8.0,"cost":570.4},{"id":1014,"d":"2024-12-15","cu":"C128","seg":"Bronze","city":"Chennai","cat":"Wellness","prod":"Collagen Supplement","brand":"OZiva","qty":3,"ch":"Website","mrp":1453.0,"disc":12.0,"cost":464.96},{"id":1015,"d":"2024-05-14","cu":"C116","seg":"Silver","city":"Bengaluru","cat":"Skincare","prod":"Moisturizer","brand":"Dot & Key","qty":5,"ch":"Instagram","mrp":1358.0,"disc":8.0,"cost":516.04},{"id":1016,"d":"2024-03-23","cu":"C117","seg":"Silver","city":"Jaipur","cat":"Skincare","prod":"Night Cream","brand":"Dot & Key","qty":3,"ch":"Instagram","mrp":1488.0,"disc":10.0,"cost":565.44},{"id":1017,"d":"2024-06-06","cu":"C107","seg":"Gold","city":"Hyderabad","cat":"Skincare","prod":"Vitamin C Serum","brand":"Plum","qty":4,"ch":"App","mrp":1813.0,"disc":5.0,"cost":688.94},{"id":1018,"d":"2024-03-06","cu":"C121","seg":"Silver","city":"Jaipur","cat":"Haircare","prod":"Conditioner","brand":"Tresemme","qty":5,"ch":"App","mrp":1395.0,"disc":5.0,"cost":488.25},{"id":1019,"d":"2024-10-03","cu":"C124","seg":"Bronze","city":"Hyderabad","cat":"Wellness","prod":"Probiotic Blend","brand":"Wellbeing Nutrition","qty":3,"ch":"WhatsApp","mrp":1441.0,"disc":8.0,"cost":461.12},{"id":1020,"d":"2024-03-02","cu":"C107","seg":"Gold","city":"Delhi","cat":"Wellness","prod":"Collagen Supplement","brand":"OZiva","qty":5,"ch":"App","mrp":1453.0,"disc":10.0,"cost":464.96},{"id":1021,"d":"2024-01-04","cu":"C102","seg":"Gold","city":"Mumbai","cat":"Haircare","prod":"Shampoo 250ml","brand":"Brillare","qty":1,"ch":"Amazon","mrp":2169.0,"disc":12.0,"cost":759.15},{"id":1022,"d":"2024-05-01","cu":"C108","seg":"Gold","city":"Kolkata","cat":"Haircare","prod":"Hair Oil","brand":"Arata","qty":2,"ch":"Amazon","mrp":777.0,"disc":20.0,"cost":271.95},{"id":1023,"d":"2024-08-30","cu":"C107","seg":"Gold","city":"Kolkata","cat":"Makeup","prod":"Lipstick","brand":"Faces Canada","qty":1,"ch":"Instagram","mrp":955.0,"disc":15.0,"cost":382.0},{"id":1024,"d":"2024-08-04","cu":"C113","seg":"Silver","city":"Mumbai","cat":"Skincare","prod":"Vitamin C Serum","brand":"Plum","qty":4,"ch":"App","mrp":1813.0,"disc":5.0,"cost":688.94},{"id":1025,"d":"2024-04-08","cu":"C106","seg":"Gold","city":"Kolkata","cat":"Haircare","prod":"Scalp Serum","brand":"Brillare","qty":2,"ch":"Website","mrp":529.0,"disc":5.0,"cost":185.15},{"id":1026,"d":"2024-08-14","cu":"C125","seg":"Bronze","city":"Jaipur","cat":"Skincare","prod":"Vitamin C Serum","brand":"Plum","qty":5,"ch":"App","mrp":1813.0,"disc":5.0,"cost":688.94},{"id":1027,"d":"2024-03-26","cu":"C113","seg":"Silver","city":"Kolkata","cat":"Haircare","prod":"Scalp Serum","brand":"Brillare","qty":1,"ch":"WhatsApp","mrp":529.0,"disc":5.0,"cost":185.15},{"id":1028,"d":"2024-05-15","cu":"C129","seg":"Bronze","city":"Kolkata","cat":"Wellness","prod":"Probiotic Blend","brand":"Wellbeing Nutrition","qty":5,"ch":"App","mrp":1441.0,"disc":8.0,"cost":461.12},{"id":1029,"d":"2024-04-07","cu":"C109","seg":"Silver","city":"Mumbai","cat":"Skincare","prod":"Moisturizer","brand":"Dot & Key","qty":1,"ch":"Amazon","mrp":1358.0,"disc":15.0,"cost":516.04},{"id":1030,"d":"2024-09-28","cu":"C105","seg":"Gold","city":"Jaipur","cat":"Skincare","prod":"Sunscreen SPF50","brand":"Minimalist","qty":1,"ch":"WhatsApp","mrp":1442.0,"disc":8.0,"cost":547.96},{"id":1031,"d":"2024-03-02","cu":"C130","seg":"Bronze","city":"Lucknow","cat":"Haircare","prod":"Hair Oil","brand":"Arata","qty":5,"ch":"WhatsApp","mrp":777.0,"disc":5.0,"cost":271.95},{"id":1032,"d":"2024-12-02","cu":"C118","seg":"Silver","city":"Jaipur","cat":"Wellness","prod":"Omega 3","brand":"Wellbeing Nutrition","qty":2,"ch":"App","mrp":1161.0,"disc":5.0,"cost":371.52},{"id":1033,"d":"2024-05-15","cu":"C112","seg":"Silver","city":"Chennai","cat":"Makeup","prod":"Foundation","brand":"Colorbar","qty":1,"ch":"Amazon","mrp":171.0,"disc":22.0,"cost":68.4},{"id":1034,"d":"2024-02-21","cu":"C102","seg":"Gold","city":"Hyderabad","cat":"Wellness","prod":"Vitamin D3","brand":"The Whole Truth","qty":3,"ch":"Instagram","mrp":1449.0,"disc":10.0,"cost":463.68},{"id":1035,"d":"2024-05-25","cu":"C105","seg":"Gold","city":"Jaipur","cat":"Wellness","prod":"Ashwagandha","brand":"Fast&Up","qty":5,"ch":"Instagram","mrp":1410.0,"disc":10.0,"cost":451.2},{"id":1036,"d":"2024-12-05","cu":"C103","seg":"Gold","city":"Bengaluru","cat":"Wellness","prod":"Collagen Supplement","brand":"OZiva","qty":1,"ch":"Instagram","mrp":1453.0,"disc":15.0,"cost":464.96},{"id":1037,"d":"2024-05-24","cu":"C119","seg":"Silver","city":"Pune","cat":"Haircare","prod":"Conditioner","brand":"Tresemme","qty":5,"ch":"Website","mrp":1395.0,"disc":8.0,"cost":488.25},{"id":1038,"d":"2024-11-20","cu":"C113","seg":"Silver","city":"Chennai","cat":"Skincare","prod":"Vitamin C Serum","brand":"Plum","qty":3,"ch":"App","mrp":1813.0,"disc":5.0,"cost":688.94},{"id":1039,"d":"2024-08-14","cu":"C117","seg":"Silver","city":"Ahmedabad","cat":"Skincare","prod":"Vitamin C Serum","brand":"Plum","qty":1,"ch":"Amazon","mrp":1813.0,"disc":18.0,"cost":688.94},{"id":1040,"d":"2024-01-19","cu":"C126","seg":"Bronze","city":"Lucknow","cat":"Haircare","prod":"Scalp Serum","brand":"Brillare","qty":2,"ch":"Website","mrp":529.0,"disc":5.0,"cost":185.15},{"id":1041,"d":"2024-07-02","cu":"C106","seg":"Gold","city":"Hyderabad","cat":"Skincare","prod":"Moisturizer","brand":"Dot & Key","qty":5,"ch":"Amazon","mrp":1358.0,"disc":15.0,"cost":516.04},{"id":1042,"d":"2024-03-20","cu":"C129","seg":"Bronze","city":"Hyderabad","cat":"Haircare","prod":"Hair Mask","brand":"Pilgrim","qty":4,"ch":"WhatsApp","mrp":1047.0,"disc":10.0,"cost":366.45},{"id":1043,"d":"2024-12-08","cu":"C127","seg":"Bronze","city":"Hyderabad","cat":"Wellness","prod":"Vitamin D3","brand":"The Whole Truth","qty":1,"ch":"WhatsApp","mrp":1449.0,"disc":8.0,"cost":463.68},{"id":1044,"d":"2024-04-23","cu":"C106","seg":"Gold","city":"Kolkata","cat":"Wellness","prod":"Omega 3","brand":"Wellbeing Nutrition","qty":2,"ch":"WhatsApp","mrp":1161.0,"disc":8.0,"cost":371.52},{"id":1045,"d":"2024-06-17","cu":"C108","seg":"Gold","city":"Delhi","cat":"Wellness","prod":"Omega 3","brand":"Wellbeing Nutrition","qty":5,"ch":"Instagram","mrp":1161.0,"disc":12.0,"cost":371.52},{"id":1046,"d":"2024-01-15","cu":"C103","seg":"Gold","city":"Chennai","cat":"Haircare","prod":"Hair Oil","brand":"Arata","qty":3,"ch":"WhatsApp","mrp":777.0,"disc":5.0,"cost":271.95},{"id":1047,"d":"2024-06-25","cu":"C123","seg":"Bronze","city":"Pune","cat":"Makeup","prod":"Eyeliner","brand":"Faces Canada","qty":5,"ch":"App","mrp":1426.0,"disc":5.0,"cost":570.4},{"id":1048,"d":"2024-05-10","cu":"C101","seg":"Gold","city":"Ahmedabad","cat":"Skincare","prod":"Night Cream","brand":"Dot & Key","qty":5,"ch":"Instagram","mrp":1488.0,"disc":10.0,"cost":565.44},{"id":1049,"d":"2024-08-08","cu":"C102","seg":"Gold","city":"Pune","cat":"Wellness","prod":"Collagen Supplement","brand":"OZiva","qty":3,"ch":"Instagram","mrp":1453.0,"disc":15.0,"cost":464.96},{"id":1050,"d":"2024-07-25","cu":"C122","seg":"Silver","city":"Jaipur","cat":"Haircare","prod":"Hair Mask","brand":"Pilgrim","qty":4,"ch":"App","mrp":1047.0,"disc":10.0,"cost":366.45}];
 
-const CH = ["App","Instagram","Website","WhatsApp","Amazon"];
+const CHANNELS = ["App","Instagram","WhatsApp","Website","Amazon"];
 const CATS = ["Wellness","Skincare","Haircare","Makeup"];
-const SEGS = ["Gold","Silver","Bronze"];
-const LOY = ["Y","N"];
-const LOY_LABEL = {Y:"Members", N:"Non-members"};
-const CH_COLOR = {App:"#4FA8D1",Instagram:"#8C7AE6",Website:"#5CC8A8",WhatsApp:"#C9D6DC",Amazon:"#F2A33A"};
-const CAT_COLOR = {Skincare:"#6F8CF0",Haircare:"#F08C7A",Makeup:"#C17AD8",Wellness:"#5DBB7B"};
-const SEG_COLOR = {Gold:"#D9B24A",Silver:"#AEB8C2",Bronze:"#C27A45"};
-const LOY_COLOR = {Y:"#4FA8D1",N:"#5F6C75"};
-const DISC_SHADES = ["#F47CA1","#E0527F","#C23B63","#9E2E50","#7E2542"];
-const lum = h => { const n = parseInt(h.slice(1),16), r = n>>16&255, g = n>>8&255, b = n&255; return (0.299*r + 0.587*g + 0.114*b)/255; };
+const CAT_COLOR = {Skincare:"#5B83C9",Haircare:"#C4861F",Makeup:"#9557AE",Wellness:"#3A8E62"};
+const DISC_SHADES = ["#8E2346","#B0325A","#C95479","#DB7E9B","#EAAABD"];
 const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 const MONTHS_LONG = ["January","February","March","April","May","June","July","August","September","October","November","December"];
-const ALL = {ch:CH, cat:CATS, seg:SEGS, loyal:LOY};
-const DIM_LABEL = {ch:"Channel", cat:"Category", seg:"Segment", loyal:"Loyalty", prod:"Product", city:"City", cu:"Customer"};
 
 const DATA = RAW.map(r => {
-  const gross = r.qty * r.mrp, net = gross * (1 - r.disc / 100);
+  const gross = r.qty * r.mrp;
+  const net = gross * (1 - r.disc / 100);
   return {...r, gross, net, discAmt: gross - net, costAmt: r.qty * r.cost, m: Number(r.d.slice(5,7)) - 1};
 });
-const CAT_OF = {}, BRAND_OF = {}, HERO_OF = {}, NAME_OF = {};
-DATA.forEach(r => { CAT_OF[r.prod] = r.cat; BRAND_OF[r.prod] = r.brand; HERO_OF[r.prod] = r.hero === "Y"; NAME_OF[r.cu] = r.name; });
 
-const F = {ch:new Set(CH), cat:new Set(CATS), seg:new Set(SEGS), loyal:new Set(LOY), prod:null, city:null, cu:null};
-const UI = {sortKey:"net", sortDir:-1, mix:"ch", allRecs:false};
+const state = {ch:new Set(CHANNELS), cat:new Set(CATS), sortKey:"net", sortDir:-1};
 
 /* ---------- helpers ---------- */
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const attr = s => String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 const inr0 = n => "₹" + Math.round(n).toLocaleString("en-IN");
 const inr2 = n => "₹" + n.toLocaleString("en-IN",{minimumFractionDigits:2,maximumFractionDigits:2});
 const pct = (x,d=1) => (x*100).toFixed(d) + "%";
-const short = n => n >= 1e5 ? "₹" + (n/1e5).toFixed(1).replace(/\.0$/,"") + "L" : n >= 1e3 ? "₹" + Math.round(n/1e3) + "K" : "₹" + Math.round(n);
-const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
-const median = a => { if (!a.length) return 0; const s = [...a].sort((x,y)=>x-y), h = Math.floor(s.length/2); return s.length % 2 ? s[h] : (s[h-1]+s[h])/2; };
-const listText = a => a.length <= 1 ? (a[0] || "") : a.slice(0,-1).join(", ") + " and " + a[a.length-1];
-function niceMax(v){ if (v <= 0) return 1; const p = Math.pow(10, Math.floor(Math.log10(v))), f = v/p; return (f<=1?1:f<=2?2:f<=2.5?2.5:f<=5?5:10)*p; }
-function niceTicks(mx){ const ok = x => { const f = x/Math.pow(10,Math.floor(Math.log10(x))); return [1,2,2.5,5].some(n=>Math.abs(f-n)<1e-9); }; return ok(mx/5) ? 5 : 4; }
-function svg(W, H, inner, label){ return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${attr(label)}">${inner}</svg>`; }
-function tipAttr(html){ return ` data-tip="${attr(html)}"`; }
-function fAttr(spec){ return ` data-f="${attr(spec)}" tabindex="0"`; }
+const short = n => n >= 1e5 ? "₹" + (n/1e5).toFixed(1).replace(/\.0$/,"") + "L"
+                 : n >= 1e3 ? "₹" + Math.round(n/1e3) + "K" : "₹" + Math.round(n);
 
 function agg(rows){
-  const ids = new Set(), cus = new Set(); let gross=0, net=0, disc=0, cost=0, units=0, dp=0;
-  for (const r of rows){ ids.add(r.id); cus.add(r.cu); gross+=r.gross; net+=r.net; disc+=r.discAmt; cost+=r.costAmt; units+=r.qty; dp+=r.disc; }
+  const ids = new Set(); let gross=0, net=0, disc=0, cost=0, units=0, discPct=0;
+  for (const r of rows){ ids.add(r.id); gross+=r.gross; net+=r.net; disc+=r.discAmt; cost+=r.costAmt; units+=r.qty; discPct+=r.disc; }
   const orders = ids.size;
-  return {orders, customers:cus.size, gross, net, disc, cost, units, margin:net-cost, marginPct: net ? (net-cost)/net : 0,
-          aov: orders ? net/orders : 0, avgDisc: rows.length ? dp/rows.length : 0, effDisc: gross ? disc/gross : 0};
+  return {orders, gross, net, disc, cost, units, margin:net-cost,
+          marginPct: net ? (net-cost)/net : 0, aov: orders ? net/orders : 0,
+          avgDisc: rows.length ? discPct/rows.length : 0, effDisc: gross ? disc/gross : 0};
 }
-function by(rows, key){
+function groupBy(rows, key){
   const m = new Map();
-  for (const r of rows){ if (!m.has(r[key])) m.set(r[key], []); m.get(r[key]).push(r); }
-  return [...m].map(([k, rs]) => ({k, rows:rs, ...agg(rs)}));
+  for (const r of rows){ if(!m.has(r[key])) m.set(r[key], []); m.get(r[key]).push(r); }
+  return m;
 }
-const TOTAL = agg(DATA);
+function niceMax(v){
+  if (v <= 0) return 1;
+  const p = Math.pow(10, Math.floor(Math.log10(v))), f = v / p;
+  return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * p;
+}
+const filtered = () => DATA.filter(r => state.ch.has(r.ch) && state.cat.has(r.cat));
 
-/* ---------- filters and cross-filtering ---------- */
-const pass = r => F.ch.has(r.ch) && F.cat.has(r.cat) && F.seg.has(r.seg) && F.loyal.has(r.loyal)
-  && (!F.prod || r.prod === F.prod) && (!F.city || r.city === F.city) && (!F.cu || r.cu === F.cu);
-const isSetDim = d => d in ALL;
-const isFocused = (d, v) => isSetDim(d) ? (F[d].size === 1 && F[d].has(v)) : F[d] === v;
-function focusOn(d, v){ if (isSetDim(d)) F[d] = new Set([v]); else F[d] = v; }
-function clearDim(d){ if (isSetDim(d)) F[d] = new Set(ALL[d]); else F[d] = null; }
-function applyFocus(spec){
-  const pairs = spec.split("|").map(p => { const i = p.indexOf(":"); return [p.slice(0,i), p.slice(i+1)]; });
-  const already = pairs.every(([d,v]) => isFocused(d,v));
-  pairs.forEach(([d,v]) => already ? clearDim(d) : focusOn(d,v));
+/* ---------- filters ---------- */
+function buildChips(){
+  const mk = (wrap, items, set, colorOf) => items.forEach(v => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "chip"; b.setAttribute("aria-pressed","true");
+    b.innerHTML = (colorOf ? `<span class="sw" style="background:${colorOf(v)}"></span>` : "") + esc(v);
+    b.onclick = () => { set.has(v) ? set.delete(v) : set.add(v); b.setAttribute("aria-pressed", set.has(v)); render(); };
+    wrap.appendChild(b);
+  });
+  mk($("f-ch"), CHANNELS, state.ch);
+  mk($("f-cat"), CATS, state.cat, c => CAT_COLOR[c]);
+}
+function resetFilters(){
+  CHANNELS.forEach(c => state.ch.add(c)); CATS.forEach(c => state.cat.add(c));
+  document.querySelectorAll(".chip").forEach(b => b.setAttribute("aria-pressed","true"));
   render();
 }
-function resetAll(){ Object.keys(F).forEach(clearDim); render(); }
 
-function buildChips(){
-  const mk = (id, dim, items, label, color) => items.forEach(v => {
-    const b = document.createElement("button");
-    b.type = "button"; b.className = "chip"; b.dataset.dim = dim; b.dataset.v = v;
-    b.innerHTML = (color ? `<span class="sw" style="background:${color(v)}"></span>` : "") + esc(label ? label(v) : v);
-    b.onclick = () => { F[dim].has(v) ? F[dim].delete(v) : F[dim].add(v); render(); };
-    $(id).appendChild(b);
-  });
-  mk("f-ch", "ch", CH, null, v => CH_COLOR[v]);
-  mk("f-cat", "cat", CATS, null, v => CAT_COLOR[v]);
-  mk("f-seg", "seg", SEGS, null, v => SEG_COLOR[v]);
-  mk("f-loyal", "loyal", LOY, v => LOY_LABEL[v]);
-}
-function syncChips(){ document.querySelectorAll(".chip").forEach(b => b.setAttribute("aria-pressed", F[b.dataset.dim].has(b.dataset.v))); }
-
-function renderTopbar(rows){
-  const pills = [];
-  for (const d of Object.keys(F)){
-    if (isSetDim(d)){
-      if (F[d].size === ALL[d].length) continue;
-      const vals = ALL[d].filter(v => F[d].has(v)).map(v => d === "loyal" ? LOY_LABEL[v] : v);
-      pills.push([d, `${DIM_LABEL[d]}: ${vals.length ? vals.join(", ") : "none"}`]);
-    } else if (F[d]) pills.push([d, `${DIM_LABEL[d]}: ${d === "cu" ? NAME_OF[F[d]] : F[d]}`]);
-  }
-  const n = new Set(rows.map(r => r.id)).size;
-  $("active-f").innerHTML = pills.length
-    ? `<span>${n} of ${DATA.length} orders</span>` + pills.map(([d,t]) => `<span class="pill">${esc(t)}<button type="button" data-clear="${d}" aria-label="Clear ${DIM_LABEL[d]} filter">✕</button></span>`).join("") + `<button class="linkbtn" type="button" data-reset>Reset</button>`
-    : `<span>All ${DATA.length} orders</span>`;
-  $("scope").textContent = pills.length ? `Showing ${n} of ${DATA.length} orders.` : `Showing all ${DATA.length} orders.`;
-}
-
-/* ---------- analysis context shared by several panels ---------- */
-const QUAD = {
-  star:{label:"Protect", tone:"neutral", name:"Stars"},
-  leak:{label:"Improve margin", tone:"warn", name:"Thin-margin sellers"},
-  gem:{label:"Promote", tone:"good", name:"Hidden gems"},
-  rethink:{label:"Rethink", tone:"bad", name:"Rethink"}
-};
-function buildContext(rows, A){
-  const P = by(rows, "prod").map(p => ({...p, cat:CAT_OF[p.k], brand:BRAND_OF[p.k], hero:HERO_OF[p.k]})).sort((a,b) => b.net - a.net);
-  P.forEach((p,i) => {
-    p.rank = i + 1; p.share = A.net ? p.net / A.net : 0; p.costRatio = p.cost / p.gross;
-    const chs = by(p.rows, "ch");
-    p.topCh = [...chs].sort((a,b) => b.net - a.net)[0].k;
-    p.deep = [...chs].sort((a,b) => b.avgDisc - a.avgDisc)[0];
-  });
-  const medRev = median(P.map(p => p.net)), medM = median(P.map(p => p.marginPct)), medCost = median(P.map(p => p.costRatio));
-  P.forEach(p => { const hr = p.net >= medRev, hm = p.marginPct >= medM; p.quad = hr && hm ? "star" : hr ? "leak" : hm ? "gem" : "rethink"; });
-  const ctx = {P, medRev, medM, medCost};
-  ctx.recs = buildRecs(ctx, A);
-  ctx.actions = buildActions(rows, A, ctx);
-  return ctx;
-}
-
-function buildRecs(ctx, A){
-  const {P, medM, medCost} = ctx, n = P.length, recs = [];
-  if (n < 4) return recs;
-  for (const p of P){
-    const name = esc(p.k);
-    if (p.hero && p.rank > Math.ceil(n/2)){
-      recs.push({pri:1, tag:"Review hero", tone:"bad", p:p.k, text: p.marginPct >= medM
-        ? `A hero with a healthy ${pct(p.marginPct)} margin, yet only #${p.rank} of ${n} (${plural(p.orders,"order")}). Give it real hero visibility: app banners, bundles, sampling.`
-        : `A hero ranked #${p.rank} of ${n} (${plural(p.orders,"order")}) with a below-median ${pct(p.marginPct)} margin. Refresh it, or move hero status to a stronger seller.`});
-      continue;
-    }
-    if (!p.hero && p.rank <= 5 && n >= 8)
-      recs.push({pri:2, tag:"Make it a hero", tone:"good", p:p.k, text:`#${p.rank} by revenue (${pct(p.share)}) with a ${pct(p.marginPct)} margin, and no hero support yet. Feature it.`});
-    if (p.quad === "leak"){
-      if (p.avgDisc > A.avgDisc)
-        recs.push({pri:3, tag:"Trim discount", tone:"warn", p:p.k, text:`Sells well (${pct(p.share)} of revenue) but its margin is ${pct(p.marginPct)}, below the ${pct(medM)} median. Its ${p.deep.k} sales run at ${p.deep.avgDisc.toFixed(0)}% off.`});
-      else
-        recs.push({pri:3, tag:"Watch cost", tone:"warn", p:p.k, text:`Sells well (${pct(p.share)} of revenue), but its margin is ${pct(p.marginPct)}, below the ${pct(medM)} median. Discounts are modest; its cost is ${pct(p.costRatio,0)} of list price vs ${pct(medCost,0)} typical. Negotiate supplier cost or review price.`});
-    }
-    if (p.quad === "gem" && !p.hero){
-      const peer = P.find(q => q.cat === p.cat && q.k !== p.k && q.rank < p.rank);
-      recs.push({pri:4, tag:"Promote", tone:"good", p:p.k, text:`Keeps a ${pct(p.marginPct)} margin but has only ${plural(p.orders,"order")}. ${peer ? `Bundle it with ${esc(peer.k)}` : "Bundle it with a best-seller"} or push it on App.`});
-    }
-    if (p.quad === "rethink" && !p.hero && p.rank > n - 4)
-      recs.push({pri:5, tag:"Rethink", tone:"bad", p:p.k, text:`${plural(p.units,"unit")} sold for ${inr0(p.net)} at a ${pct(p.marginPct)} margin. Bundle, reposition or consider delisting.`});
-    if (p.quad === "star" && p.hero && p.rank <= 3)
-      recs.push({pri:6, tag:"Protect", tone:"neutral", p:p.k, text:`${inr0(p.net)} (${pct(p.share)} of revenue) at a ${pct(p.marginPct)} margin. Keep it in stock and front and centre.`});
-  }
-  for (const c of CATS){
-    const inCat = P.filter(p => p.cat === c);
-    const hasHero = Object.keys(HERO_OF).some(k => HERO_OF[k] && CAT_OF[k] === c);
-    if (inCat.length && !hasHero)
-      recs.push({pri:2.5, tag:"Category gap", tone:"neutral", p:null, text:`${c} has no hero product at all. Its best seller, ${esc(inCat[0].k)}, is the natural candidate.`});
-  }
-  return recs.sort((a,b) => a.pri - b.pri);
-}
-
-function buildActions(rows, A, ctx){
-  const acts = [];
-  const ch = by(rows, "ch");
-  if (ch.length > 1){
-    const best = [...ch].sort((a,b) => b.aov - a.aov)[0];
-    const lowest = Math.min(...ch.map(c => c.avgDisc));
-    acts.push({area:"Channels", tone:"good", title:`Grow ${best.k}'s share of orders`,
-      ev:`${best.k} orders average ${inr0(best.aov)} vs ${inr0(A.aov)} overall, at a ${best.avgDisc.toFixed(1)}% average discount${best.avgDisc === lowest ? ", the lowest of any channel" : ""}. App-only launches and loyalty points can steer repeat buyers there.`});
-    const deep = [...ch].sort((a,b) => b.avgDisc - a.avgDisc)[0];
-    const others = ch.filter(c => c.k !== deep.k), oNet = others.reduce((s,c)=>s+c.net,0), oM = others.reduce((s,c)=>s+c.margin,0);
-    if (deep.avgDisc > A.avgDisc + 3)
-      acts.push({area:"Channels", tone:"warn", title:`Rein in ${deep.k} discounts`,
-        ev:`${deep.k} averages ${deep.avgDisc.toFixed(1)}% off and keeps a ${pct(deep.marginPct)} margin vs ${pct(oM/oNet)} on the other channels combined, for just ${pct(deep.net/A.net)} of revenue.`});
-    for (const c of ch){
-      const h1 = c.rows.filter(r => r.m < 6).reduce((s,r)=>s+r.net,0), h2 = c.net - h1;
-      if (h1 > 0 && h2 < 0.5*h1 && h1 >= 0.1*A.net)
-        acts.push({area:"Channels", tone:"bad", title:`Find out why ${c.k} fell in the second half`, ev:`Net revenue dropped from ${inr0(h1)} in Jan–Jun to ${inr0(h2)} in Jul–Dec, ${pct(1-h2/h1,0)} lower. Check whether campaigns or influencer spend stopped.`});
-      if (h1 > 0 && h2 >= 1.8*h1 && h2 >= 0.08*A.net)
-        acts.push({area:"Channels", tone:"good", title:`Build on ${c.k}'s momentum`, ev:`Net revenue grew from ${inr0(h1)} in Jan–Jun to ${inr0(h2)} in Jul–Dec.`});
-    }
-    const gaps = channelGaps(rows);
-    if (gaps.length) acts.push({area:"Channels", tone:"neutral", title:"Fill the channel gaps", ev:`No orders for ${listText(gaps.slice(0,3).map(g => `${g.cat} on ${g.ch}`))}, even though these categories sell elsewhere.`});
-  }
-  const rv = ctx.recs.filter(r => r.tag === "Review hero").map(r => r.p);
-  const mh = ctx.recs.filter(r => r.tag === "Make it a hero").map(r => r.p);
-  if (rv.length || mh.length)
-    acts.push({area:"Products", tone:"warn", title:"Refresh the hero line-up",
-      ev: (rv.length ? `${listText(rv.map(esc))} ${rv.length === 1 ? "is a hero" : "are heroes"} but rank in the bottom half by revenue. ` : "") + (mh.length ? `${listText(mh.map(esc))} outsell${mh.length === 1 ? "s" : ""} them without hero support.` : "")});
-  const top = ctx.P[0];
-  if (top && ctx.P.length >= 4 && top.quad === "leak")
-    acts.push({area:"Products", tone:"warn", title:`Protect the margin on ${esc(top.k)}`, ev:`Your #1 product (${pct(top.share)} of revenue) runs a ${pct(top.marginPct)} margin vs a ${pct(ctx.medM)} median; its cost is ${pct(top.costRatio,0)} of list price.`});
-  const gems = ctx.recs.filter(r => r.tag === "Promote").map(r => r.p);
-  if (gems.length) acts.push({area:"Products", tone:"good", title:"Promote high-margin, low-volume products", ev:`${listText(gems.slice(0,4).map(esc))} keep above-median margins but sell little. Bundles with best-sellers are a cheap test.`});
-  const re = ctx.recs.filter(r => r.tag === "Rethink").map(r => r.p);
-  if (re.length) acts.push({area:"Products", tone:"bad", title:"Decide on the long tail", ev:`${listText(re.map(esc))} sold very little in 2024. Bundle, reposition or delist.`});
-
-  const cust = by(rows, "cu").map(c => ({...c, loyal:c.rows[0].loyal, seg:c.rows[0].seg, name:c.rows[0].name})).sort((a,b) => b.net - a.net);
-  const nm = cust.filter(c => c.loyal === "N" && c.orders >= 2);
-  const mem = cust.filter(c => c.loyal === "Y"), non = cust.filter(c => c.loyal === "N");
-  if (nm.length){
-    const ev = `${listText(nm.slice(0,3).map(c => `${esc(c.name)} (${c.seg}, ${inr0(c.net)})`))} buy repeatedly but ${nm.length === 1 ? "is not a member" : "are not members"}.`
-      + (mem.length && non.length ? ` Members place ${(mem.reduce((s,c)=>s+c.orders,0)/mem.length).toFixed(1)} orders each vs ${(non.reduce((s,c)=>s+c.orders,0)/non.length).toFixed(1)} for non-members.` : "");
-    acts.push({area:"Customers", tone:"good", title:"Enrol repeat buyers in the loyalty programme", ev});
-  }
-  const once = cust.filter(c => c.orders === 1);
-  if (cust.length >= 5 && once.length / cust.length > 0.3)
-    acts.push({area:"Customers", tone:"warn", title:"Win back one-time buyers", ev:`${once.length} of ${cust.length} customers (${pct(once.length/cust.length,0)}) ordered only once. A second-order offer, e.g. a refill reminder, is the cheapest growth lever.`});
-  const seg = by(rows, "seg"), g = seg.find(s => s.k === "Gold"), b = seg.find(s => s.k === "Bronze");
-  if (g && b && b.aov > g.aov)
-    acts.push({area:"Customers", tone:"neutral", title:"Upgrade high-spending Bronze customers", ev:`Bronze customers spend ${inr0(b.aov)} per order, more than Gold (${inr0(g.aov)}), but place fewer orders (${b.orders} vs ${g.orders}). Nudge them to buy again and move up a tier.`});
-  return acts;
-}
-
-function channelGaps(rows){
-  const cats = CATS.filter(c => rows.some(r => r.cat === c)), chs = CH.filter(c => F.ch.has(c)), gaps = [];
-  for (const c of cats) for (const h of chs){
-    const has = rows.some(r => r.cat === c && r.ch === h);
-    const elsewhere = new Set(rows.filter(r => r.cat === c).map(r => r.ch)).size;
-    if (!has && elsewhere >= 2) gaps.push({cat:c, ch:h});
-  }
-  return gaps;
-}
-
-/* ---------- overview ---------- */
+/* ---------- hero: gross-to-net bridge ---------- */
 function renderHero(rows, A){
-  $("headline").innerHTML = `<span class="g">${inr0(A.gross)}</span> of list value became <span class="n">${inr0(A.net)}</span> in net revenue after <span class="d">${inr0(A.disc)}</span> of channel discounts (${pct(A.effDisc)} of list value).`;
+  $("headline").innerHTML =
+    `<span class="g">${inr0(A.gross)}</span> of list value became <span class="n">${inr0(A.net)}</span> in net revenue after <span class="d">${inr0(A.disc)}</span> of channel discounts (${pct(A.effDisc)} of list value).`;
+
   const el = $("bridge"), W = Math.max(280, el.clientWidth);
-  const barH = 46, y0 = 4, zoomY = 132, zoomH = 34, H = zoomY + zoomH + 4, netW = W * A.net / A.gross;
-  const byCh = by(rows, "ch").sort((a,b) => b.disc - a.disc);
-  let s = `<rect x="0" y="${y0}" width="${netW}" height="${barH}" fill="var(--net)" rx="3"${tipAttr(`<b>Net revenue</b><br>${inr2(A.net)}`)}/>`;
-  s += `<rect x="${netW}" y="${y0}" width="${Math.max(0, W-netW)}" height="${barH}" fill="var(--disc)"${tipAttr(`<b>Discounts</b><br>${inr2(A.disc)}`)}/>`;
-  if (netW > 190) s += `<text x="14" y="${y0+barH/2+5}" fill="#fff" font-size="14" font-weight="600" pointer-events="none">Net revenue ${inr0(A.net)} (${pct(A.net/A.gross)})</text>`;
+  const barH = 46, y0 = 4, zoomY = 132, zoomH = 34, H = zoomY + zoomH + 4;
+  const netW = W * A.net / A.gross;
+  const byCh = [...groupBy(rows,"ch")].map(([ch, rs]) => ({ch, ...agg(rs)})).sort((a,b) => b.disc - a.disc);
+  let s = `<rect x="0" y="${y0}" width="${netW}" height="${barH}" fill="var(--net)" rx="3"><title>Net revenue ${inr2(A.net)}</title></rect>`;
+  s += `<rect x="${netW}" y="${y0}" width="${Math.max(0, W-netW)}" height="${barH}" fill="var(--disc)"><title>Discounts ${inr2(A.disc)}</title></rect>`;
+  if (netW > 190) s += `<text x="14" y="${y0+barH/2+5}" fill="#fff" font-size="14" font-weight="600">Net revenue ${inr0(A.net)} (${pct(A.net/A.gross)})</text>`;
   if (A.disc > 0){
     s += `<polygon points="${netW},${y0+barH} ${W},${y0+barH} ${W},${zoomY} 0,${zoomY}" fill="var(--disc)" opacity="0.09"/>`;
     s += `<line x1="${netW}" y1="${y0+barH}" x2="0" y2="${zoomY}" stroke="var(--disc)" stroke-opacity=".45" stroke-dasharray="3 3"/>`;
     s += `<line x1="${W}" y1="${y0+barH}" x2="${W}" y2="${zoomY}" stroke="var(--disc)" stroke-opacity=".45" stroke-dasharray="3 3"/>`;
-    const lbl = W < 560 ? `Discounts, split by channel (zoomed ${Math.round(A.gross/A.disc)}×)` : `Discounts of ${inr0(A.disc)}, split by channel (zoomed ${Math.round(A.gross/A.disc)}×)`;
-    s += `<text x="${W/2}" y="${(y0+barH+zoomY)/2+5}" text-anchor="middle" fill="var(--disc)" font-size="13" font-weight="600">${lbl}</text>`;
+    s += `<text x="${W/2}" y="${(y0+barH+zoomY)/2+5}" text-anchor="middle" fill="var(--disc)" font-size="13" font-weight="600">Discounts of ${inr0(A.disc)}, split by channel (zoomed ${Math.round(A.gross/A.disc)}×)</text>`.replace(/Discounts of .*?, split/, W < 560 ? "Discounts, split" : "$&");
     let x = 0;
-    byCh.forEach((c,i) => {
+    byCh.forEach((c, i) => {
       const w = W * c.disc / A.disc;
-      s += `<rect x="${x}" y="${zoomY}" width="${Math.max(0,w-2)}" height="${zoomH}" fill="${DISC_SHADES[i%5]}" class="clickable"${fAttr("ch:"+c.k)}${tipAttr(`<b>${c.k}</b><br>${inr2(c.disc)} of discount<br>Avg ${c.avgDisc.toFixed(1)}% per order`)}/>`;
-      if (w > 64) s += `<text x="${x+8}" y="${zoomY+zoomH/2+5}" fill="#fff" font-size="12.5" font-weight="600" pointer-events="none">${c.k}</text>`;
+      s += `<rect x="${x}" y="${zoomY}" width="${Math.max(0,w-2)}" height="${zoomH}" fill="${DISC_SHADES[i % 5]}"><title>${esc(c.ch)}: ${inr2(c.disc)} discount, avg ${c.avgDisc.toFixed(1)}% per order</title></rect>`;
+      if (w > 64) s += `<text x="${x+8}" y="${zoomY+zoomH/2+5}" fill="${i < 3 ? "#fff" : "#4A1024"}" font-size="12.5" font-weight="600">${esc(c.ch)}</text>`;
       x += w;
     });
   }
-  el.innerHTML = svg(W, H, s, `Bridge from list value ${inr0(A.gross)} to net revenue ${inr0(A.net)}`);
-  $("bridge-legend").innerHTML = byCh.map((c,i) => `<span><span class="sw" style="background:${DISC_SHADES[i%5]}"></span><b>${c.k}</b> ${inr0(c.disc)} off, avg ${c.avgDisc.toFixed(1)}% per order</span>`).join("");
+  el.innerHTML = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Bridge from list value ${inr0(A.gross)} to net revenue ${inr0(A.net)}, with ${inr0(A.disc)} of discounts split by channel">${s}</svg>`;
+  $("bridge-legend").innerHTML = byCh.map((c,i) =>
+    `<span><span class="sw" style="background:${DISC_SHADES[i%5]}"></span><b>${esc(c.ch)}</b> ${inr0(c.disc)} off, avg ${c.avgDisc.toFixed(1)}% per order</span>`).join("");
 }
 
-function renderKPIs(rows, A){
-  const filtered = rows.length !== DATA.length;
+/* ---------- KPIs ---------- */
+function renderKPIs(A){
   const k = [
-    ["Net revenue", inr0(A.net), filtered ? `${pct(A.net/TOTAL.net)} of all revenue` : `List value ${inr0(A.gross)}`],
-    ["Orders", A.orders, `${plural(A.customers,"customer")}`],
+    ["Net revenue", inr0(A.net), `List value ${inr0(A.gross)}`],
+    ["Orders", A.orders, `${new Set(filtered().map(r=>r.cu)).size} customers`],
     ["Units sold", A.units, `${(A.units/A.orders).toFixed(1)} per order`],
-    ["Avg order value", inr0(A.aov), filtered ? `vs ${inr0(TOTAL.aov)} overall` : "Net revenue ÷ orders"],
+    ["Avg order value", inr0(A.aov), "Net revenue ÷ orders"],
     ["Avg discount", A.avgDisc.toFixed(1) + "%", `Per order; ${pct(A.effDisc)} of list value`],
     ["Gross margin", pct(A.marginPct), `${inr0(A.margin)} after product cost`],
   ];
   $("kpis").innerHTML = k.map(([l,v,s]) => `<div class="kpi"><div class="k">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join("");
 }
 
-function renderInsights(rows, A, ctx){
+/* ---------- insights ---------- */
+function renderInsights(rows, A){
   const out = [];
-  const ch = by(rows,"ch"), cat = by(rows,"cat"), seg = by(rows,"seg"), mon = by(rows,"m");
+  const ch = [...groupBy(rows,"ch")].map(([k,rs]) => ({k, ...agg(rs)}));
+  const cat = [...groupBy(rows,"cat")].map(([k,rs]) => ({k, ...agg(rs)}));
+  const prod = [...groupBy(rows,"prod")].map(([k,rs]) => ({k, ...agg(rs)}));
+  const mon = [...groupBy(rows,"m")].map(([k,rs]) => ({k, ...agg(rs)}));
+
   if (ch.length > 1){
-    const top = [...ch].sort((a,b)=>b.net-a.net)[0], deep = [...ch].sort((a,b)=>b.avgDisc-a.avgDisc)[0];
-    out.push(`<b>${top.k}</b> brings in the most revenue: ${inr0(top.net)} (${pct(top.net/A.net)}) from ${plural(top.orders,"order")}.`);
-    const lowM = [...ch].sort((a,b)=>a.marginPct-b.marginPct)[0];
-    out.push(`<b>${deep.k}</b> discounts deepest, ${deep.avgDisc.toFixed(1)}% per order on average` + (deep.k === lowM.k ? `, and has the lowest margin of any channel (${pct(deep.marginPct)}).` : "."));
+    const top = [...ch].sort((a,b)=>b.net-a.net)[0];
+    out.push(`<b>${top.k}</b> brings in the most revenue: ${inr0(top.net)} (${pct(top.net/A.net)} of net) from ${top.orders} orders, with an average discount of ${top.avgDisc.toFixed(1)}%${top.avgDisc === Math.min(...ch.map(c=>c.avgDisc)) ? ", the lowest of any channel" : ""}.`);
+    const deep = [...ch].sort((a,b)=>b.avgDisc-a.avgDisc)[0];
+    const bestM = [...ch].sort((a,b)=>b.marginPct-a.marginPct)[0];
+    const lowestM = [...ch].sort((a,b)=>a.marginPct-b.marginPct)[0];
+    let t = `<b>${deep.k}</b> discounts deepest, ${deep.avgDisc.toFixed(1)}% per order on average`;
+    t += deep.k === lowestM.k
+      ? `, and it has the lowest gross margin of any channel (${pct(deep.marginPct)} vs ${pct(bestM.marginPct)} on ${bestM.k}).`
+      : `; its gross margin is ${pct(deep.marginPct)} vs ${pct(bestM.marginPct)} on ${bestM.k}.`;
+    out.push(t);
+    const discTop = [...ch].sort((a,b)=>b.disc-a.disc)[0];
+    if (discTop.k !== deep.k) out.push(`In rupees, <b>${discTop.k}</b> gives away the most discount (${inr0(discTop.disc)}) because of its higher order volume, even though ${deep.k} has the steeper rate.`);
   }
-  if (ctx.P.length > 1){
-    const p = ctx.P[0], heroes = ctx.P.filter(q => q.hero);
-    out.push(`<b>${esc(p.k)}</b> is the top product at ${inr0(p.net)}, ${pct(p.share)} of revenue.` + (heroes.length && heroes.length < ctx.P.length ? ` Hero products bring in ${pct(heroes.reduce((s,q)=>s+q.net,0)/A.net)} of revenue.` : ""));
+  if (prod.length > 1){
+    const p = [...prod].sort((a,b)=>b.net-a.net)[0];
+    out.push(`<b>${esc(p.k)}</b> is the top product at ${inr0(p.net)}, ${pct(p.net/A.net)} of net revenue from ${p.units} units.`);
   }
   if (cat.length > 1){
-    const s = [...cat].sort((a,b)=>b.marginPct-a.marginPct);
-    out.push(`<b>${s[0].k}</b> keeps the highest margin (${pct(s[0].marginPct)}); <b>${s[s.length-1].k}</b> the lowest (${pct(s[s.length-1].marginPct)}).`);
-  }
-  if (seg.length > 1){
-    const t = [...seg].sort((a,b)=>b.net-a.net)[0], hi = [...seg].sort((a,b)=>b.aov-a.aov)[0];
-    out.push(`<b>${t.k}</b> customers bring in ${pct(t.net/A.net)} of revenue` + (hi.k !== t.k ? `, but <b>${hi.k}</b> customers spend the most per order (${inr0(hi.aov)}).` : "."));
+    const s = [...cat].sort((a,b)=>b.aov-a.aov);
+    out.push(`<b>${s[0].k}</b> has the highest average order value (${inr0(s[0].aov)}); <b>${s[s.length-1].k}</b> the lowest (${inr0(s[s.length-1].aov)}).`);
   }
   if (mon.length > 1){
     const m = [...mon].sort((a,b)=>b.net-a.net)[0];
-    out.push(`<b>${MONTHS_LONG[m.k]}</b> was the strongest month with ${inr0(m.net)} from ${plural(m.orders,"order")}.`);
+    out.push(`<b>${MONTHS_LONG[m.k]}</b> was the strongest month with ${inr0(m.net)} from ${m.orders} order${m.orders===1?"":"s"}.`);
   }
-  $("insights").innerHTML = out.slice(0,6).map(t => `<li>${t}</li>`).join("") || "<li>Select more data to compare.</li>";
+  $("insights").innerHTML = out.slice(0,5).map(t => `<li>${t}</li>`).join("");
 }
 
-function actionItem(a, showArea){
-  return `<li><div class="act-title">${showArea ? `<span class="tag ${a.tone}">${a.area}</span>` : ""}${a.title}</div><div class="act-ev">${a.ev}</div></li>`;
-}
-function renderTopActions(ctx){
-  const picks = ["Channels","Products","Customers"].map(a => ctx.actions.find(x => x.area === a)).filter(Boolean);
-  $("top-actions").innerHTML = picks.map(a => actionItem(a, true)).join("") || "<li class='muted'>No suggestions for this selection.</li>";
-}
-
-/* ---------- channels ---------- */
+/* ---------- channel scorecard ---------- */
 function renderChannelTable(rows, A){
-  const ch = by(rows,"ch").sort((a,b)=>b.net-a.net), maxNet = Math.max(...ch.map(c=>c.net));
-  let h = `<thead><tr><th>Channel</th><th>Net revenue</th><th>Share</th><th>Orders</th><th>AOV</th><th>Avg discount</th><th>Margin</th></tr></thead><tbody>`;
+  const ch = [...groupBy(rows,"ch")].map(([k,rs]) => ({k, ...agg(rs)})).sort((a,b)=>b.net-a.net);
+  const maxNet = Math.max(...ch.map(c=>c.net)), maxD = 25;
+  let h = `<thead><tr><th scope="col">Channel</th><th scope="col">Net revenue</th><th scope="col">Share</th><th scope="col">Orders</th><th scope="col">AOV</th><th scope="col">Avg discount</th><th scope="col">Margin</th></tr></thead><tbody>`;
   for (const c of ch){
-    h += `<tr class="clickable${isFocused("ch",c.k)?" focused":""}"${fAttr("ch:"+c.k)}><td><span class="dot" style="background:${CH_COLOR[c.k]}"></span>${c.k}</td>
+    h += `<tr><td>${esc(c.k)}</td>
       <td><div class="barcell"><span class="track"><span class="minibar" style="width:${100*c.net/maxNet}%"></span></span>${inr0(c.net)}</div></td>
       <td>${pct(c.net/A.net)}</td><td>${c.orders}</td><td>${inr0(c.aov)}</td>
-      <td><div class="barcell"><span class="track" style="flex-basis:56px"><span class="minibar d" style="width:${100*c.avgDisc/25}%"></span></span>${c.avgDisc.toFixed(1)}%</div></td>
+      <td><div class="barcell"><span class="track" style="flex-basis:60px"><span class="minibar d" style="width:${100*c.avgDisc/maxD}%"></span></span>${c.avgDisc.toFixed(1)}%</div></td>
       <td>${pct(c.marginPct)}</td></tr>`;
   }
   $("channel-table").innerHTML = h + "</tbody>";
 }
 
-function renderMomentum(rows){
-  const el = $("momentum"), W = Math.max(260, el.clientWidth);
-  const ch = by(rows,"ch").map(c => { const h1 = c.rows.filter(r=>r.m<6).reduce((s,r)=>s+r.net,0); return {k:c.k, h1, h2:c.net-h1}; })
-    .sort((a,b) => CH.indexOf(a.k) - CH.indexOf(b.k));
-  const lw = 84, rw = 58, rh = 38, H = ch.length*rh + 26, pw = W - lw - rw - 10;
-  const mx = niceMax(Math.max(...ch.map(c => Math.max(c.h1,c.h2))));
-  const X = v => lw + pw * v / mx;
+/* ---------- monthly trend ---------- */
+function renderTrend(rows){
+  const el = $("trend"), W = Math.max(260, el.clientWidth), H = 240;
+  const pad = {l:46, r:6, t:18, b:26}, pw = W-pad.l-pad.r, ph = H-pad.t-pad.b;
+  const vals = MONTHS.map((_,i) => rows.filter(r=>r.m===i).reduce((s,r)=>s+r.net,0));
+  const mx = niceMax(Math.max(...vals)), peak = vals.indexOf(Math.max(...vals));
   let s = "";
-  [0, mx/2, mx].forEach(v => { s += `<line x1="${X(v)}" x2="${X(v)}" y1="4" y2="${H-20}" stroke="var(--grid)"/><text x="${X(v)}" y="${H-5}" text-anchor="middle" font-size="11" fill="var(--muted)">${short(v)}</text>`; });
-  ch.forEach((c,i) => {
-    const y = 6 + i*rh + rh/2, up = c.h2 >= c.h1, col = up ? "var(--good)" : "var(--disc)";
-    const chg = c.h1 ? (c.h2 - c.h1)/c.h1 : null;
-    s += `<g class="clickable"${fAttr("ch:"+c.k)}${tipAttr(`<b>${c.k}</b><br>Jan–Jun: ${inr0(c.h1)}<br>Jul–Dec: ${inr0(c.h2)}`)}>`;
-    s += `<rect x="0" y="${y-rh/2}" width="${W}" height="${rh}" fill="transparent"/>`;
-    s += `<text x="0" y="${y+4}" font-size="13" fill="var(--ink)">${c.k}</text>`;
-    s += `<line x1="${X(c.h1)}" x2="${X(c.h2)}" y1="${y}" y2="${y}" stroke="${col}" stroke-width="3" stroke-opacity=".55"/>`;
-    s += `<circle cx="${X(c.h1)}" cy="${y}" r="6" fill="var(--panel)" stroke="${col}" stroke-width="2"/>`;
-    s += `<circle cx="${X(c.h2)}" cy="${y}" r="6" fill="${col}"/>`;
-    s += `<text x="${W-2}" y="${y+4}" text-anchor="end" font-size="12.5" font-weight="650" fill="${col}">${chg === null ? "new" : (chg >= 0 ? "+" : "−") + Math.abs(Math.round(chg*100)) + "%"}</text></g>`;
-  });
-  el.innerHTML = svg(W, H, s, "Net revenue by channel, first half vs second half of 2024");
-}
-
-function renderMonthly(rows){
-  const el = $("monthly"), W = Math.max(280, el.clientWidth), H = 250;
-  const pad = {l:46, r:6, t:20, b:26}, pw = W-pad.l-pad.r, ph = H-pad.t-pad.b;
-  const chs = CH.filter(c => rows.some(r => r.ch === c));
-  const grid = MONTHS.map((_,i) => chs.map(c => rows.filter(r => r.m===i && r.ch===c).reduce((s,r)=>s+r.net,0)));
-  const tot = grid.map(a => a.reduce((s,v)=>s+v,0)), mx = niceMax(Math.max(...tot)), nt = niceTicks(mx), peak = tot.indexOf(Math.max(...tot));
-  let s = "";
-  for (let i=0;i<=nt;i++){ const v = mx*i/nt, y = pad.t+ph-ph*i/nt;
-    s += `<line x1="${pad.l}" x2="${W-pad.r}" y1="${y}" y2="${y}" stroke="var(--grid)"/><text x="${pad.l-8}" y="${y+4}" text-anchor="end" font-size="11.5" fill="var(--muted)">${short(v)}</text>`; }
-  const step = pw/12, bw = step*0.62;
-  grid.forEach((vals, i) => {
-    let y = pad.t + ph; const x = pad.l + step*i + (step-bw)/2;
-    vals.forEach((v, j) => {
-      if (!v) return; const h = ph*v/mx; y -= h;
-      s += `<rect x="${x}" y="${y}" width="${bw}" height="${Math.max(0,h-1)}" fill="${CH_COLOR[chs[j]]}" class="clickable"${fAttr("ch:"+chs[j])}${tipAttr(`<b>${MONTHS_LONG[i]}</b><br>${chs[j]}: ${inr0(v)}<br>Month total: ${inr0(tot[i])}`)}/>`;
-    });
-    if (i === peak && tot[i] > 0) s += `<text x="${x+bw/2}" y="${y-6}" text-anchor="middle" font-size="11.5" font-weight="650" fill="var(--ink)">${short(tot[i])}</text>`;
-    s += `<text x="${x+bw/2}" y="${H-8}" text-anchor="middle" font-size="11.5" fill="var(--muted)">${W < 460 ? MONTHS[i][0] : MONTHS[i]}</text>`;
-  });
-  el.innerHTML = svg(W, H, s, `Monthly net revenue by channel; peak in ${MONTHS_LONG[peak]}`);
-  $("monthly-legend").innerHTML = chs.map(c => `<span><span class="sw" style="background:${CH_COLOR[c]}"></span>${c}</span>`).join("");
-}
-
-function renderPricing(rows){
-  const chs = CH.filter(c => F.ch.has(c));
-  const revOf = {}; DATA.forEach(r => revOf[r.prod] = (revOf[r.prod]||0) + r.net);
-  const prods = [...new Set(PRICING.map(p => p.p))].filter(p => F.cat.has(CAT_OF[p]) && (!F.prod || p === F.prod))
-    .sort((a,b) => CATS.indexOf(CAT_OF[a]) - CATS.indexOf(CAT_OF[b]) || revOf[b] - revOf[a]);
-  const D = {}; PRICING.forEach(p => D[p.p+"|"+p.ch] = p.d);
-  const cnt = {}; rows.forEach(r => { const k = r.prod+"|"+r.ch; cnt[k] = (cnt[k]||0) + 1; });
-  const color = d => { const t = Math.min(1, d/22), a = [36,24,31], b = [226,78,124]; return `rgb(${a.map((x,i)=>Math.round(x+(b[i]-x)*t)).join(",")})`; };
-  let h = `<thead><tr><th>Product</th>${chs.map(c=>`<th>${c}</th>`).join("")}</tr></thead><tbody>`;
-  for (const p of prods){
-    h += `<tr><td><span class="dot" style="background:${CAT_COLOR[CAT_OF[p]]}"></span>${esc(p)}</td>` + chs.map(c => {
-      const d = D[p+"|"+c], n = cnt[p+"|"+c] || 0, dark = d/22 > 0.5;
-      return `<td class="c" style="background:${color(d)};color:#fff"${fAttr(`prod:${p}|ch:${c}`)}${tipAttr(`<b>${esc(p)}</b> on ${c}<br>${d}% off list price<br>${plural(n,"order")} in selection`)}>${d}%${n ? `<span class="ord">${n}</span>` : ""}</td>`;
-    }).join("") + "</tr>";
+  const isNice = x => { const f = x / Math.pow(10, Math.floor(Math.log10(x))); return [1,2,2.5,5].some(n => Math.abs(f-n) < 1e-9); };
+  const nt = isNice(mx/5) ? 5 : 4;
+  for (let i=0;i<=nt;i++){
+    const v = mx*i/nt, y = pad.t + ph - ph*i/nt;
+    s += `<line x1="${pad.l}" x2="${W-pad.r}" y1="${y}" y2="${y}" stroke="#E4EAE8"/>`;
+    s += `<text x="${pad.l-8}" y="${y+4}" text-anchor="end" font-size="11.5" fill="var(--muted)">${short(v)}</text>`;
   }
-  $("pricing").innerHTML = h + "</tbody>";
+  const step = pw/12, bw = step*0.64;
+  vals.forEach((v,i) => {
+    const h = ph*v/mx, x = pad.l + step*i + (step-bw)/2, y = pad.t + ph - h;
+    s += `<rect x="${x}" y="${y}" width="${bw}" height="${h}" rx="2" fill="${i===peak ? "var(--net)" : "#7FA7BA"}"><title>${MONTHS_LONG[i]}: ${inr2(v)}</title></rect>`;
+    if (i===peak && v>0) s += `<text x="${x+bw/2}" y="${y-5}" text-anchor="middle" font-size="11.5" font-weight="600" fill="var(--net)">${short(v)}</text>`;
+    s += `<text x="${x+bw/2}" y="${H-8}" text-anchor="middle" font-size="11.5" fill="var(--muted)">${W < 420 ? MONTHS[i][0] : MONTHS[i]}</text>`;
+  });
+  el.innerHTML = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Monthly net revenue; peak in ${MONTHS_LONG[peak]}">${s}</svg>`;
 }
 
+/* ---------- product ranking ---------- */
+function renderRanking(rows){
+  const el = $("ranking"), W = Math.max(280, el.clientWidth);
+  const prods = [...groupBy(rows,"prod")].map(([k,rs]) => ({k, cat:rs[0].cat, ...agg(rs)})).sort((a,b)=>b.net-a.net);
+  const narrow = W < 460, fs = narrow ? 11.5 : 12.5, rh = 25, H = prods.length*rh + 4, lw = narrow ? 138 : Math.min(150, W*0.36), vw = narrow ? 92 : 112, bmax = W-lw-vw-8;
+  const mx = Math.max(...prods.map(p=>p.net));
+  let s = "";
+  prods.forEach((p,i) => {
+    const y = i*rh + 2, w = Math.max(1, bmax*p.net/mx);
+    s += `<text x="${lw-8}" y="${y+rh/2+4}" text-anchor="end" font-size="${fs}" fill="var(--ink)">${esc(p.k)}</text>`;
+    s += `<rect x="${lw}" y="${y+4}" width="${w}" height="${rh-9}" rx="2" fill="${CAT_COLOR[p.cat]}"><title>${esc(p.k)} (${p.cat}): ${inr2(p.net)}, margin ${pct(p.marginPct)}</title></rect>`;
+    s += `<text x="${lw+w+6}" y="${y+rh/2+4}" font-size="${fs}" fill="var(--ink)">${inr0(p.net)}<tspan fill="var(--muted)" dx="6">${pct(p.marginPct,0)}</tspan></text>`;
+  });
+  el.innerHTML = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Products ranked by net revenue; top is ${esc(prods[0].k)}">${s}</svg>`;
+  $("cat-legend").innerHTML = CATS.filter(c=>state.cat.has(c)).map(c => `<span><span class="sw" style="background:${CAT_COLOR[c]}"></span>${c}</span>`).join("");
+}
+
+/* ---------- heatmap ---------- */
 function renderHeatmap(rows){
-  const chs = CH.filter(c => F.ch.has(c)), cats = CATS.filter(c => F.cat.has(c));
+  const chs = CHANNELS.filter(c=>state.ch.has(c)), cats = CATS.filter(c=>state.cat.has(c));
   const cell = {}; let mx = 0;
-  rows.forEach(r => { const k = r.ch+"|"+r.cat; cell[k] = (cell[k]||0) + r.net; });
+  for (const r of rows){ const k = r.ch+"|"+r.cat; cell[k] = (cell[k]||0) + r.net; }
   Object.values(cell).forEach(v => mx = Math.max(mx, v));
-  const color = v => { const t = Math.sqrt(v/mx), a = [22,34,42], b = [48,146,194]; return `rgb(${a.map((x,i)=>Math.round(x+(b[i]-x)*t)).join(",")})`; };
-  let h = `<thead><tr><th>Channel</th>${cats.map(c=>`<th>${c}</th>`).join("")}<th>Total</th></tr></thead><tbody>`;
+  const color = v => { const t = Math.sqrt(v/mx); // sqrt keeps small cells visible
+    const a = [227,238,242], b = [31,94,122];
+    return `rgb(${a.map((x,i)=>Math.round(x+(b[i]-x)*t)).join(",")})`; };
+  let h = `<thead><tr><th scope="col">Channel</th>${cats.map(c=>`<th scope="col">${c}</th>`).join("")}<th scope="col">Total</th></tr></thead><tbody>`;
   for (const ch of chs){
     let tot = 0;
     h += `<tr><td>${ch}</td>` + cats.map(c => {
-      const v = cell[ch+"|"+c]; if (!v) return `<td style="background:var(--empty);color:var(--faint)">–</td>`;
+      const v = cell[ch+"|"+c]; if (!v) return `<td style="background:#F6F8F7;color:#9AA7AE">&ndash;</td>`;
       tot += v; const dark = Math.sqrt(v/mx) > 0.55;
-      return `<td class="c" style="background:${color(v)};color:#fff"${fAttr(`ch:${ch}|cat:${c}`)}${tipAttr(`<b>${ch}, ${c}</b><br>${inr2(v)}`)}>${short(v)}</td>`;
-    }).join("") + `<td style="background:none;font-weight:650">${tot ? short(tot) : "–"}</td></tr>`;
+      return `<td style="background:${color(v)};color:${dark?"#fff":"var(--ink)"}" title="${ch}, ${c}: ${inr2(v)}">${short(v)}</td>`;
+    }).join("") + `<td style="background:none;font-weight:600">${short(tot)}</td></tr>`;
   }
   $("heatmap").innerHTML = h + "</tbody>";
-  const gaps = channelGaps(rows);
-  $("gaps").innerHTML = gaps.length ? `<b style="color:var(--ink)">Gaps:</b> no orders for ${listText(gaps.map(g => `${g.cat} on ${g.ch}`))}, although these categories sell on other channels.` : "";
 }
 
-/* ---------- products ---------- */
-function renderMatrix(rows, ctx){
-  const el = $("matrix"), W = Math.max(280, el.clientWidth), H = W < 500 ? 320 : 370, P = ctx.P;
-  $("matrix-legend").innerHTML = CATS.filter(c => P.some(p => p.cat === c)).map(c => `<span><span class="sw" style="background:${CAT_COLOR[c]};border-radius:50%"></span>${c}</span>`).join("") + `<span><span class="sw" style="background:var(--panel);border:2px solid var(--ink);border-radius:50%"></span>Hero product</span>`;
-  if (P.length < 3){ el.innerHTML = `<p class="note">Select at least three products to compare them here.</p>`; return; }
-  const pad = {l:44, r:14, t:14, b:34}, pw = W-pad.l-pad.r, ph = H-pad.t-pad.b;
-  const xm = niceMax(Math.max(...P.map(p=>p.net)));
-  let ylo = Math.floor((Math.min(...P.map(p=>p.marginPct))*100 - 2)/5)*5, yhi = Math.ceil((Math.max(...P.map(p=>p.marginPct))*100 + 2)/5)*5;
-  if (yhi - ylo < 10) yhi = ylo + 10;
-  const X = v => pad.l + pw * v / xm, Y = m => pad.t + ph - ph * (m*100 - ylo) / (yhi - ylo);
-  const mx = X(ctx.medRev), my = Y(ctx.medM), maxU = Math.max(...P.map(p=>p.units));
-  let s = "";
-  const quads = [["gem",pad.l,pad.t,mx-pad.l,my-pad.t,"#141C2A"],["star",mx,pad.t,W-pad.r-mx,my-pad.t,"#11211B"],["rethink",pad.l,my,mx-pad.l,pad.t+ph-my,"#22151A"],["leak",mx,my,W-pad.r-mx,pad.t+ph-my,"#241C13"]];
-  quads.forEach(([q,x,y,w,h,c]) => { if (w>0 && h>0) s += `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${c}"/>`; });
-  const xt = niceTicks(xm); for (let i=0;i<=xt;i++){ const v = xm*i/xt; s += `<text x="${X(v)}" y="${H-14}" text-anchor="middle" font-size="11" fill="var(--muted)">${short(v)}</text>`; }
-  for (let m = ylo; m <= yhi; m += 5) s += `<text x="${pad.l-6}" y="${Y(m/100)+4}" text-anchor="end" font-size="11" fill="var(--muted)">${m}%</text>`;
-  s += `<text x="${pad.l+pw/2}" y="${H-1}" text-anchor="middle" font-size="11.5" fill="var(--muted)">Net revenue →</text>`;
-  s += `<line x1="${mx}" x2="${mx}" y1="${pad.t}" y2="${pad.t+ph}" stroke="#56636B" stroke-dasharray="4 4"/><line x1="${pad.l}" x2="${W-pad.r}" y1="${my}" y2="${my}" stroke="#56636B" stroke-dasharray="4 4"/>`;
-  const ql = (t,x,y,a) => `<text x="${x}" y="${y}" text-anchor="${a}" font-size="12" font-weight="650" fill="var(--muted)">${t}</text>`;
-  const nar = W < 560;
-  s += ql(nar ? "Gems" : "Hidden gems: promote", pad.l+8, pad.t+16, "start") + ql(nar ? "Stars" : "Stars: protect", W-pad.r-8, pad.t+16, "end")
-     + ql("Rethink", pad.l+8, pad.t+ph-8, "start") + ql(nar ? "Thin margin" : "Thin margin: fix cost or discount", W-pad.r-8, pad.t+ph-8, "end");
-  const labelled = new Set([...P.slice(0,4).map(p=>p.k), P[P.length-1].k, [...P].sort((a,b)=>b.marginPct-a.marginPct)[0].k]);
-  [...P].sort((a,b)=>b.units-a.units).forEach(p => {
-    const cx = X(p.net), cy = Y(p.marginPct), r = 5 + 10*Math.sqrt(p.units/maxU);
-    s += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${CAT_COLOR[p.cat]}" fill-opacity=".85" stroke="${p.hero ? "var(--ink)" : "var(--panel)"}" stroke-width="${p.hero ? 2.2 : 1}" class="clickable"${fAttr("prod:"+p.k)}${tipAttr(`<b>${esc(p.k)}</b> (${p.cat}${p.hero ? ", hero" : ""})<br>Net revenue ${inr0(p.net)}, rank #${p.rank}<br>Margin ${pct(p.marginPct)}<br>${plural(p.units,"unit")}, ${plural(p.orders,"order")}<br>Suggested: ${QUAD[p.quad].label}`)}/>`;
-  });
-  const placed = [], dots = P.map(p => ({x:X(p.net), y:Y(p.marginPct), r:5 + 10*Math.sqrt(p.units/maxU)}));
-  const hit = (a, b) => a.x1 < b.x2 && a.x2 > b.x1 && a.y1 < b.y2 && a.y2 > b.y1;
-  P.filter(p => labelled.has(p.k)).forEach(p => {
-    const cx = X(p.net), cy = Y(p.marginPct), r = 5 + 10*Math.sqrt(p.units/maxU), tw = p.k.length * 6.4;
-    for (const [dx, dy] of [[1,0],[-1,0],[1,-14],[1,14],[-1,-14],[-1,14],[0,-r-9],[0,r+13]]){
-      const anchor = dx > 0 ? "start" : dx < 0 ? "end" : "middle";
-      const tx = dx > 0 ? cx + r + 4 : dx < 0 ? cx - r - 4 : cx, ty = cy + 4 + dy;
-      const box = {x1: anchor === "start" ? tx : anchor === "end" ? tx - tw : tx - tw/2, y1: ty - 11, y2: ty + 3};
-      box.x2 = box.x1 + tw;
-      if (box.x1 < pad.l || box.x2 > W - pad.r || box.y1 < pad.t || box.y2 > pad.t + ph) continue;
-      const others = dots.filter(d => !(Math.abs(d.x - cx) < 0.5 && Math.abs(d.y - cy) < 0.5)).map(d => ({x1:d.x-d.r, x2:d.x+d.r, y1:d.y-d.r, y2:d.y+d.r}));
-      if (placed.some(b => hit(b, box)) || others.some(b => hit(b, box))) continue;
-      placed.push(box);
-      s += `<text x="${tx}" y="${ty}" text-anchor="${anchor}" font-size="11.5" fill="var(--ink)" pointer-events="none" paint-order="stroke" stroke="var(--panel)" stroke-width="3">${esc(p.k)}</text>`;
-      break;
-    }
-  });
-  el.innerHTML = svg(W, H, s, "Products plotted by net revenue and gross margin");
-}
-
-function renderRecs(ctx){
-  const recs = ctx.recs, show = UI.allRecs ? recs : recs.slice(0,7);
-  $("recs").innerHTML = show.map(r => `<li><span class="tag ${r.tone}">${r.tag}</span>${r.p ? `<b class="clickable" style="cursor:pointer"${fAttr("prod:"+r.p)}>${esc(r.p)}</b>` : ""} <span class="muted">${r.text}</span></li>`).join("")
-    || `<li class="muted">Select at least four products to get suggestions.</li>`;
-  const more = $("recs-more");
-  more.hidden = recs.length <= 7;
-  more.textContent = UI.allRecs ? "Show fewer" : `Show all ${recs.length} suggestions`;
-}
-
-function renderRanking(ctx){
-  const el = $("ranking"), W = Math.max(280, el.clientWidth), P = ctx.P;
-  const narrow = W < 460, fs = narrow ? 11.5 : 12.5, rh = 25, H = P.length*rh + 4;
-  const lw = narrow ? 150 : Math.min(160, W*0.36), vw = narrow ? 86 : 112, bmax = W - lw - vw - 8, mx = Math.max(...P.map(p=>p.net));
-  let s = "";
-  P.forEach((p,i) => {
-    const y = i*rh + 2, w = Math.max(1, bmax*p.net/mx);
-    s += `<g class="clickable"${fAttr("prod:"+p.k)}${tipAttr(`<b>${esc(p.k)}</b> (${p.cat}${p.hero?", hero":""})<br>${inr2(p.net)}, ${pct(p.share)} of revenue<br>Margin ${pct(p.marginPct)}`)}>`;
-    s += `<rect x="0" y="${y}" width="${W}" height="${rh}" fill="transparent"/>`;
-    s += `<text x="${lw-8}" y="${y+rh/2+4}" text-anchor="end" font-size="${fs}" font-weight="${p.hero?700:400}" fill="var(--ink)">${esc(p.k)}</text>`;
-    s += `<rect x="${lw}" y="${y+4}" width="${w}" height="${rh-9}" rx="2" fill="${CAT_COLOR[p.cat]}" fill-opacity="${F.prod && F.prod !== p.k ? .35 : 1}"/>`;
-    s += `<text x="${lw+w+6}" y="${y+rh/2+4}" font-size="${fs}" fill="var(--ink)">${inr0(p.net)}<tspan fill="var(--muted)" dx="6">${pct(p.marginPct,0)}</tspan></text></g>`;
-  });
-  el.innerHTML = svg(W, H, s, "Products ranked by net revenue");
-  $("cat-legend").innerHTML = CATS.filter(c => P.some(p => p.cat === c)).map(c => `<span><span class="sw" style="background:${CAT_COLOR[c]}"></span>${c}</span>`).join("");
-}
-
-function renderHeroPanel(rows, A, ctx){
-  const H = rows.filter(r => r.hero === "Y"), N = rows.filter(r => r.hero !== "Y");
-  const a = agg(H), b = agg(N), np = ctx.P.filter(p => p.hero).length, nn = ctx.P.length - np;
-  const row = (l, x, y) => `<tr><td>${l}</td><td>${x}</td><td>${y}</td></tr>`;
-  $("hero-compare").innerHTML = `<thead><tr><th></th><th>Hero</th><th>Others</th></tr></thead><tbody>`
-    + row("Products sold", np, nn)
-    + row("Share of revenue", H.length ? pct(a.net/A.net) : "–", N.length ? pct(b.net/A.net) : "–")
-    + row("Revenue per product", np ? inr0(a.net/np) : "–", nn ? inr0(b.net/nn) : "–")
-    + row("AOV", H.length ? inr0(a.aov) : "–", N.length ? inr0(b.aov) : "–")
-    + row("Avg discount", H.length ? a.avgDisc.toFixed(1)+"%" : "–", N.length ? b.avgDisc.toFixed(1)+"%" : "–")
-    + row("Gross margin", H.length ? pct(a.marginPct) : "–", N.length ? pct(b.marginPct) : "–") + "</tbody>";
-  const heroes = ctx.P.filter(p => p.hero), n = ctx.P.length;
-  $("hero-list").innerHTML = heroes.length ? `<ul class="plain" style="margin-top:6px">` + heroes.map(p => {
-    const ok = p.rank <= Math.ceil(n/2);
-    return `<li class="clickable" style="cursor:pointer"${fAttr("prod:"+p.k)}><span class="tag ${ok ? "good" : "bad"}">${ok ? "Performing" : "Under-performing"}</span><b>${esc(p.k)}</b> <span class="muted">#${p.rank} of ${n}, ${inr0(p.net)}, ${plural(p.orders,"order")}, ${pct(p.marginPct)} margin</span></li>`;
-  }).join("") + "</ul>" : `<p class="note">No hero products in this selection.</p>`;
-}
-
-const PCOLS = [["k","Product","s"],["cat","Category","s"],["brand","Brand","s"],["hero","Hero","s"],["units","Units","n"],["orders","Orders","n"],
-  ["net","Net revenue","m"],["avgDisc","Avg discount","p"],["marginPct","Margin","r"],["topCh","Top channel","s"],["quad","Action","s"]];
-function renderProductTable(ctx){
-  const {sortKey:k, sortDir:d} = UI;
-  const val = (p, key) => key === "hero" ? (p.hero ? "Yes" : "") : key === "quad" ? QUAD[p.quad].label : p[key];
-  const P = [...ctx.P].sort((a,b) => { const x = val(a,k), y = val(b,k); return typeof x === "string" ? d*x.localeCompare(y) : d*(x-y); });
-  const fmt = (t, v) => t === "m" ? inr0(v) : t === "p" ? v.toFixed(1)+"%" : t === "r" ? pct(v) : esc(v);
-  let h = "<thead><tr>" + PCOLS.map(([key,label,t]) => `<th class="${t==="s"?"t":""}" ${key===k ? `aria-sort="${d<0?"descending":"ascending"}"` : ""}><button type="button" data-sort="${key}">${label}</button></th>`).join("") + "</tr></thead><tbody>";
-  for (const p of P){
-    h += `<tr class="clickable${isFocused("prod",p.k)?" focused":""}"${fAttr("prod:"+p.k)}>` + PCOLS.map(([key,,t]) => {
-      if (key === "cat") return `<td class="t"><span class="dot" style="background:${CAT_COLOR[p.cat]}"></span>${p.cat}</td>`;
-      if (key === "quad") return `<td class="t"><span class="tag ${QUAD[p.quad].tone}">${QUAD[p.quad].label}</span></td>`;
-      if (key === "hero") return `<td class="t">${p.hero ? "Yes" : "–"}</td>`;
-      return `<td class="${t==="s"?"t":""}">${fmt(t, p[key])}</td>`;
-    }).join("") + "</tr>";
+/* ---------- sortable product table ---------- */
+const PCOLS = [
+  ["prod","Product","s"],["cat","Category","s"],["brand","Brand","s"],["units","Units","n"],["orders","Orders","n"],
+  ["gross","List value","m"],["disc","Discount","m"],["net","Net revenue","m"],["avgDisc","Avg discount","p"],["marginPct","Margin","r"]
+];
+function renderProductTable(rows){
+  const prods = [...groupBy(rows,"prod")].map(([k,rs]) => ({prod:k, cat:rs[0].cat, brand:rs[0].brand, ...agg(rs)}));
+  const {sortKey:k, sortDir:d} = state;
+  prods.sort((a,b) => typeof a[k] === "string" ? d*a[k].localeCompare(b[k]) : d*(a[k]-b[k]));
+  const fmt = (t,v) => t==="m" ? inr0(v) : t==="p" ? v.toFixed(1)+"%" : t==="r" ? pct(v) : esc(v);
+  let h = "<thead><tr>" + PCOLS.map(([key,label,t]) =>
+    `<th scope="col" class="${t==="s"?"t":""}" ${key===k ? `aria-sort="${d<0?"descending":"ascending"}"` : ""}><button type="button" data-k="${key}">${label}</button></th>`).join("") + "</tr></thead><tbody>";
+  for (const p of prods){
+    h += "<tr>" + PCOLS.map(([key,,t]) => key==="cat"
+      ? `<td class="t"><span class="cat-dot" style="background:${CAT_COLOR[p.cat]}"></span>${p.cat}</td>`
+      : `<td class="${t==="s"?"t":""}">${fmt(t,p[key])}</td>`).join("") + "</tr>";
   }
+  const A = agg(rows);
+  h += `<tr style="font-weight:600"><td>Total</td><td></td><td></td><td>${A.units}</td><td>${A.orders}</td><td>${inr0(A.gross)}</td><td>${inr0(A.disc)}</td><td>${inr0(A.net)}</td><td>${A.avgDisc.toFixed(1)}%</td><td>${pct(A.marginPct)}</td></tr>`;
   $("product-table").innerHTML = h + "</tbody>";
-}
-
-/* ---------- customers ---------- */
-function miniBars(el, items, fmt, label){
-  const W = Math.max(150, el.clientWidth), H = 150, top = 22, base = H - 24, mx = Math.max(...items.map(i=>i.v)) || 1;
-  const step = W / Math.max(3, items.length), bw = Math.min(46, step*0.58);
-  let s = `<line x1="0" x2="${W}" y1="${base}" y2="${base}" stroke="var(--line)"/>`;
-  items.forEach((it, i) => {
-    const h = (base - top) * it.v / mx, x = step*i + (step-bw)/2;
-    s += `<g class="clickable"${fAttr("seg:"+it.k)}${tipAttr(`<b>${it.k}</b><br>${label}: ${fmt(it.v)}`)}>`;
-    s += `<rect x="${x}" y="${base-h}" width="${bw}" height="${h}" rx="2" fill="${SEG_COLOR[it.k]}"/>`;
-    s += `<text x="${x+bw/2}" y="${base-h-6}" text-anchor="middle" font-size="12" font-weight="650" fill="var(--ink)">${fmt(it.v)}</text>`;
-    s += `<text x="${x+bw/2}" y="${H-6}" text-anchor="middle" font-size="12" fill="var(--muted)">${it.k}</text></g>`;
+  $("product-table").querySelectorAll("th button").forEach(b => b.onclick = () => {
+    const nk = b.dataset.k;
+    if (state.sortKey === nk) state.sortDir *= -1;
+    else { state.sortKey = nk; state.sortDir = PCOLS.find(c=>c[0]===nk)[2]==="s" ? 1 : -1; }
+    renderProductTable(filtered());
+    $("product-table").querySelector(`th button[data-k="${nk}"]`).focus();
   });
-  el.innerHTML = svg(W, H, s, label + " by customer segment");
 }
-function renderSegments(rows, A){
-  const seg = by(rows,"seg").sort((a,b) => SEGS.indexOf(a.k) - SEGS.indexOf(b.k));
-  const wrap = $("seg-minis");
-  wrap.innerHTML = `<div class="mini"><div class="t">Net revenue</div><div id="mini-rev"></div></div><div class="mini"><div class="t">Orders</div><div id="mini-ord"></div></div><div class="mini"><div class="t">Avg order value</div><div id="mini-aov"></div></div>`;
-  miniBars($("mini-rev"), seg.map(s => ({k:s.k, v:s.net})), short, "Net revenue");
-  miniBars($("mini-ord"), seg.map(s => ({k:s.k, v:s.orders})), v => String(v), "Orders");
-  miniBars($("mini-aov"), seg.map(s => ({k:s.k, v:s.aov})), inr0, "Avg order value");
-  let h = `<thead><tr><th>Segment</th><th>Customers</th><th>Members</th><th>Orders each</th><th>Share</th><th>Margin</th></tr></thead><tbody>`;
-  for (const s of seg){
-    const cus = by(s.rows,"cu"), mem = cus.filter(c => c.rows[0].loyal === "Y").length;
-    h += `<tr class="clickable${isFocused("seg",s.k)?" focused":""}"${fAttr("seg:"+s.k)}><td><span class="dot" style="background:${SEG_COLOR[s.k]}"></span>${s.k}</td><td>${s.customers}</td><td>${mem} (${pct(mem/s.customers,0)})</td><td>${(s.orders/s.customers).toFixed(1)}</td><td>${pct(s.net/A.net)}</td><td>${pct(s.marginPct)}</td></tr>`;
-  }
-  $("seg-table").innerHTML = h + "</tbody>";
-}
-function renderSegMix(rows){
-  const dim = UI.mix, keys = (dim === "ch" ? CH : CATS).filter(k => rows.some(r => r[dim] === k)), COL = dim === "ch" ? CH_COLOR : CAT_COLOR;
-  document.querySelectorAll("[data-mix]").forEach(b => b.setAttribute("aria-pressed", b.dataset.mix === dim));
-  const seg = by(rows,"seg").sort((a,b) => SEGS.indexOf(a.k) - SEGS.indexOf(b.k));
-  const el = $("seg-mix"), W = Math.max(260, el.clientWidth), lw = 62, rh = 40, H = seg.length*rh + 4, pw = W - lw;
-  let s = "";
-  seg.forEach((sg, i) => {
-    const y = i*rh + 4; let x = lw;
-    s += `<text x="0" y="${y+rh/2+2}" font-size="13" font-weight="600" fill="var(--ink)">${sg.k}</text>`;
-    keys.forEach(k => {
-      const v = sg.rows.filter(r => r[dim] === k).reduce((a,r)=>a+r.net,0); if (!v) return;
-      const w = pw * v / sg.net, share = v / sg.net, dark = lum(COL[k]) < 0.62;
-      s += `<rect x="${x}" y="${y}" width="${Math.max(0,w-2)}" height="${rh-12}" fill="${COL[k]}" class="clickable"${fAttr(`seg:${sg.k}|${dim}:${k}`)}${tipAttr(`<b>${sg.k} customers</b><br>${k}: ${inr0(v)} (${pct(share,0)} of their revenue)`)}/>`;
-      if (w > 38) s += `<text x="${x+w/2-1}" y="${y+(rh-12)/2+4}" text-anchor="middle" font-size="11.5" font-weight="600" fill="${dark?"#fff":"#0A0D10"}" pointer-events="none">${pct(share,0)}</text>`;
-      x += w;
-    });
-  });
-  el.innerHTML = svg(W, H, s, "Share of each segment's revenue by " + (dim === "ch" ? "channel" : "category"));
-  $("mix-legend").innerHTML = keys.map(k => `<span><span class="sw" style="background:${COL[k]}"></span>${k}</span>`).join("");
-  const notes = [];
-  seg.forEach(sg => {
-    const parts = keys.map(k => ({k, v: sg.rows.filter(r => r[dim] === k).reduce((a,r)=>a+r.net,0)})).sort((a,b)=>b.v-a.v);
-    if (parts[0] && parts[0].v / sg.net >= 0.45) notes.push(`${sg.k} customers put ${pct(parts[0].v/sg.net,0)} of their spend into ${parts[0].k}`);
-  });
-  $("seg-note").textContent = notes.length ? notes.join("; ") + "." : "";
-}
-function renderLoyalty(rows){
-  const stats = LOY.map(l => {
-    const rs = rows.filter(r => r.loyal === l), a = agg(rs), cus = by(rs,"cu");
-    return {l, n:a.customers, opc: a.customers ? a.orders/a.customers : 0, rep: cus.length ? cus.filter(c=>c.orders>1).length/cus.length : 0,
-            rpc: a.customers ? a.net/a.customers : 0, aov:a.aov, upo: a.orders ? a.units/a.orders : 0, has: rs.length > 0};
-  });
-  const [Y, N] = stats;
-  const metrics = [["Customers","n",v=>String(v)],["Orders per customer","opc",v=>v.toFixed(2)],["Repeat rate (2+ orders)","rep",v=>pct(v,0)],
-                   ["Revenue per customer","rpc",inr0],["Avg order value","aov",inr0],["Units per order","upo",v=>v.toFixed(1)]];
-  let h = `<div class="fly"><div class="l"><button type="button" class="hd"${fAttr("loyal:Y")} style="color:${LOY_COLOR.Y}">Members</button></div><div class="mid"></div><div class="r"><button type="button" class="hd"${fAttr("loyal:N")} style="color:var(--muted)">Non-members</button></div>`;
-  for (const [lab, key, fmt] of metrics){
-    const mx = Math.max(Y[key], N[key]) || 1, wy = 100*Y[key]/mx, wn = 100*N[key]/mx;
-    const win = Y[key] === N[key] ? null : Y[key] > N[key] ? "Y" : "N";
-    h += `<div class="l"><span style="font-weight:${win==="Y"?700:400}">${Y.has ? fmt(Y[key]) : "–"}</span><span class="trk"><span class="bar" style="width:${wy}%;background:${LOY_COLOR.Y}"></span></span></div>`
-       + `<div class="mid">${lab}</div>`
-       + `<div class="r"><span class="trk"><span class="bar" style="width:${wn}%;background:${LOY_COLOR.N}"></span></span><span style="font-weight:${win==="N"?700:400}">${N.has ? fmt(N[key]) : "–"}</span></div>`;
-  }
-  $("loyalty").innerHTML = h + "</div>";
-  $("loyal-note").textContent = Y.has && N.has
-    ? (Y.opc > N.opc ? `Members order ${(Y.opc/N.opc).toFixed(1)}× as often, ` : "Non-members order as often or more, ") + (Y.aov < N.aov ? `but in smaller baskets. Bundles or a free-shipping threshold would lift member basket size.` : `and spend at least as much per order.`)
-    : "Only one group is in the current selection.";
-}
-function renderAcq(rows){
-  const srcs = by(rows, "acq").sort((a,b) => b.net - a.net);
-  const chs = CH.filter(c => rows.some(r => r.ch === c));
-  let mx = 0; const cell = {};
-  rows.forEach(r => { const k = r.acq+"|"+r.ch; cell[k] = (cell[k]||0) + r.net; mx = Math.max(mx, cell[k]); });
-  const color = v => { const t = Math.sqrt(v/mx), a = [22,34,42], b = [48,146,194]; return `rgb(${a.map((x,i)=>Math.round(x+(b[i]-x)*t)).join(",")})`; };
-  let h = `<thead><tr><th>Acquired via</th><th>Customers</th>${chs.map(c=>`<th>${c}</th>`).join("")}<th>Total</th></tr></thead><tbody>`;
-  for (const s of srcs){
-    h += `<tr><td>${esc(s.k)}</td><td style="background:none;font-weight:500">${s.customers}</td>` + chs.map(c => {
-      const v = cell[s.k+"|"+c]; if (!v) return `<td style="background:var(--empty);color:var(--faint)">–</td>`;
-      const dark = Math.sqrt(v/mx) > 0.55;
-      return `<td style="background:${color(v)};color:#fff"${tipAttr(`Customers acquired via <b>${esc(s.k)}</b><br>spent ${inr0(v)} on ${c}`)}>${short(v)}</td>`;
-    }).join("") + `<td style="background:none;font-weight:650">${short(s.net)}</td></tr>`;
-  }
-  $("acq").innerHTML = h + "</tbody>";
-  const t = srcs[0];
-  if (t && chs.length > 1){
-    const bc = by(t.rows,"ch").sort((a,b)=>b.net-a.net)[0];
-    const insta = srcs.find(s => s.k === "Instagram");
-    let note = `Customers acquired via ${t.k} spend the most (${inr0(t.net)}), mostly on ${bc.k} (${pct(bc.net/t.net,0)}).`;
-    if (insta && insta.net > 0){
-      const ib = insta.rows.filter(r => r.ch === "Instagram").reduce((a,r)=>a+r.net,0);
-      note += ` Only ${pct(ib/insta.net,0)} of what Instagram-acquired customers spend comes back through Instagram, so they switch channels after the first touch.`;
-    }
-    $("acq-note").textContent = note;
-  } else $("acq-note").textContent = "";
-}
-function renderTopCustomers(rows){
-  const cust = by(rows,"cu").map(c => {
-    const r0 = c.rows[0];
-    return {...c, name:r0.name, seg:r0.seg, loyal:r0.loyal, acq:r0.acq,
-      topCh: by(c.rows,"ch").sort((a,b)=>b.net-a.net)[0].k, topCat: by(c.rows,"cat").sort((a,b)=>b.net-a.net)[0].k};
-  }).sort((a,b) => b.net - a.net);
-  const top = cust.slice(0,10);
-  let h = `<thead><tr><th>Customer</th><th class="t">Segment</th><th class="t">Member</th><th class="t">Acquired via</th><th>Orders</th><th>Net revenue</th><th class="t">Top channel</th><th class="t">Top category</th><th class="t">Flag</th></tr></thead><tbody>`;
-  top.forEach((c, i) => {
-    const flag = c.loyal === "N" && (c.orders >= 2 || i < 5) ? `<span class="tag warn">Enrol in loyalty</span>`
-      : c.loyal === "Y" && c.orders >= 3 ? `<span class="tag good">Loyal regular</span>`
-      : c.orders === 1 ? `<span class="tag neutral">One-time buyer</span>` : "";
-    h += `<tr class="clickable${isFocused("cu",c.k)?" focused":""}"${fAttr("cu:"+c.k)}><td><b style="font-weight:600">${esc(c.name)}</b> <span class="muted">${c.k}</span></td>
-      <td class="t"><span class="dot" style="background:${SEG_COLOR[c.seg]}"></span>${c.seg}</td><td class="t">${c.loyal === "Y" ? "Yes" : "No"}</td><td class="t">${esc(c.acq)}</td>
-      <td>${c.orders}</td><td>${inr0(c.net)}</td><td class="t">${c.topCh}</td><td class="t">${c.topCat}</td><td class="t">${flag}</td></tr>`;
-  });
-  $("top-cust").innerHTML = h + "</tbody>";
-}
-function renderCities(rows){
-  const el = $("cities"), W = Math.max(240, el.clientWidth);
-  const cs = by(rows,"city").map(c => ({...c, state:c.rows[0].state})).sort((a,b)=>b.net-a.net);
-  const rh = 26, H = cs.length*rh + 4, lw = 110, vw = 142, bmax = W - lw - vw, mx = Math.max(...cs.map(c=>c.net));
-  let s = "";
-  cs.forEach((c,i) => {
-    const y = i*rh + 2, w = Math.max(1, bmax*c.net/mx);
-    s += `<g class="clickable"${fAttr("city:"+c.k)}${tipAttr(`<b>${esc(c.k)}, ${c.state}</b><br>${inr0(c.net)} from ${plural(c.orders,"order")}<br>Avg discount ${c.avgDisc.toFixed(1)}%, margin ${pct(c.marginPct)}`)}>`;
-    s += `<rect x="0" y="${y}" width="${W}" height="${rh}" fill="transparent"/>`;
-    s += `<text x="${lw-8}" y="${y+rh/2+4}" text-anchor="end" font-size="12.5" fill="var(--ink)">${esc(c.k)} <tspan fill="var(--muted)">${c.state}</tspan></text>`;
-    s += `<rect x="${lw}" y="${y+5}" width="${w}" height="${rh-10}" rx="2" fill="var(--net)" fill-opacity="${F.city && F.city !== c.k ? .35 : .9}"/>`;
-    s += `<text x="${lw+w+6}" y="${y+rh/2+4}" font-size="12.5" fill="var(--ink)">${inr0(c.net)}<tspan fill="var(--muted)" dx="6">${plural(c.orders,"order")}</tspan></text></g>`;
-  });
-  el.innerHTML = svg(W, H, s, "Net revenue by city");
-}
-
-/* ---------- actions ---------- */
-function renderActions(ctx){
-  const areas = ["Channels","Products","Customers"];
-  $("action-groups").innerHTML = areas.map(a => {
-    const list = ctx.actions.filter(x => x.area === a);
-    return `<div class="panel act-group"><h3>${a}</h3><ul class="plain">${list.map(x => actionItem(x, false)).join("") || "<li class='muted'>No suggestions for this selection.</li>"}</ul></div>`;
-  }).join("") + `<div class="panel act-group"><h3>Products to act on first</h3><ul class="plain">${ctx.recs.slice(0,5).map(r => `<li><span class="tag ${r.tone}">${r.tag}</span>${r.p ? `<b>${esc(r.p)}</b> ` : ""}<span class="muted">${r.text}</span></li>`).join("") || "<li class='muted'>Select at least four products.</li>"}</ul></div>`;
-}
-
-/* ---------- tooltip, clicks, keyboard ---------- */
-const tip = $("tip");
-function placeTip(x, y){ const w = tip.offsetWidth, h = tip.offsetHeight; let l = x + 14, t = y + 14; if (l + w > innerWidth - 8) l = x - w - 14; if (t + h > innerHeight - 8) t = y - h - 14; tip.style.left = Math.max(8,l) + "px"; tip.style.top = Math.max(8,t) + "px"; }
-document.addEventListener("mouseover", e => { const t = e.target.closest("[data-tip]"); if (!t){ tip.style.opacity = 0; return; } tip.innerHTML = t.dataset.tip; tip.style.opacity = 1; placeTip(e.clientX, e.clientY); });
-document.addEventListener("mousemove", e => { if (tip.style.opacity === "1") placeTip(e.clientX, e.clientY); });
-document.addEventListener("focusin", e => { const t = e.target.closest("[data-tip]"); if (!t) return; const r = t.getBoundingClientRect(); tip.innerHTML = t.dataset.tip; tip.style.opacity = 1; placeTip(r.left, r.bottom); });
-document.addEventListener("focusout", () => tip.style.opacity = 0);
-document.addEventListener("click", e => {
-  if (e.target.closest("[data-reset]")) return resetAll();
-  const c = e.target.closest("[data-clear]"); if (c){ clearDim(c.dataset.clear); return render(); }
-  const s = e.target.closest("[data-sort]");
-  if (s){ const k = s.dataset.sort; if (UI.sortKey === k) UI.sortDir *= -1; else { UI.sortKey = k; UI.sortDir = PCOLS.find(p=>p[0]===k)[2] === "s" ? 1 : -1; } render(); document.querySelector(`[data-sort="${k}"]`).focus(); return; }
-  const m = e.target.closest("[data-mix]"); if (m){ UI.mix = m.dataset.mix; renderSegMix(DATA.filter(pass)); return; }
-  if (e.target.closest("#recs-more")){ UI.allRecs = !UI.allRecs; render(); return; }
-  const f = e.target.closest("[data-f]"); if (f){ tip.style.opacity = 0; applyFocus(f.dataset.f); }
-});
-document.addEventListener("keydown", e => {
-  if ((e.key === "Enter" || e.key === " ") && e.target.matches("[data-f]:not(button)")){ e.preventDefault(); e.target.dispatchEvent(new MouseEvent("click", {bubbles:true})); }
-});
 
 /* ---------- main ---------- */
 function render(){
-  const rows = DATA.filter(pass);
-  syncChips(); renderTopbar(rows);
+  const rows = filtered();
   const empty = rows.length === 0;
   $("content").hidden = empty; $("empty").hidden = !empty;
+  const all = DATA.length;
+  $("scope").textContent = empty ? "No orders selected." :
+    `Showing ${new Set(rows.map(r=>r.id)).size} of ${all} orders placed between January and December 2024.`;
   if (empty) return;
-  const A = agg(rows), ctx = buildContext(rows, A);
-  renderHero(rows, A); renderKPIs(rows, A); renderInsights(rows, A, ctx); renderTopActions(ctx);
-  renderChannelTable(rows, A); renderMomentum(rows); renderMonthly(rows); renderPricing(rows); renderHeatmap(rows);
-  renderMatrix(rows, ctx); renderRecs(ctx); renderRanking(ctx); renderHeroPanel(rows, A, ctx); renderProductTable(ctx);
-  renderSegments(rows, A); renderSegMix(rows); renderLoyalty(rows); renderAcq(rows); renderTopCustomers(rows); renderCities(rows);
-  renderActions(ctx);
+  const A = agg(rows);
+  renderHero(rows, A); renderKPIs(A); renderInsights(rows, A);
+  renderChannelTable(rows, A); renderTrend(rows); renderRanking(rows); renderHeatmap(rows); renderProductTable(rows);
 }
+
 buildChips();
+$("reset").onclick = resetFilters; $("reset2").onclick = resetFilters;
 let rt; window.addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(render, 120); });
 render();
 </script>
